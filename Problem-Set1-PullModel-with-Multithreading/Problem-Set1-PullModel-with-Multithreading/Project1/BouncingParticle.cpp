@@ -78,6 +78,7 @@ private:
     bool stop;
 };
 
+
 // Particle class definition
 class Particle {
 public:
@@ -167,7 +168,7 @@ public:
         return velocity;
     }
 
-    // Render the particle on the given render window
+    // Render the particle on the given render window //no longer in used
     void render(sf::RenderWindow& window) const {
         std::lock_guard<std::mutex> lock(mutex);
 
@@ -243,34 +244,33 @@ private:
         return normal;
     }
 };
+
 // Function to render walls using SFML draw function
 void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& walls, std::mutex& mutex) {
-    // Lock mutex to ensure exclusive access to the window
+    // Acquire lock to prevent concurrent access to window
     std::lock_guard<std::mutex> lock(mutex);
-
-    // Render walls
     for (const auto& wall : walls) {
         window.draw(wall);
     }
 }
 
-// Function to render particles
+// Function to render particles using SFML draw function
 void renderParticles(const std::vector<Particle>& particles, sf::RenderWindow& window, std::mutex& mutex) {
-    // Lock mutex to ensure exclusive access to the window
+    // Acquire lock to prevent concurrent access to window
     std::lock_guard<std::mutex> lock(mutex);
-
-    // Render particles
     for (const auto& particle : particles) {
-        particle.render(window);
+        // Render particle using SFML draw function
+        sf::CircleShape particleShape(5.0f); // Example shape, adjust as needed
+        particleShape.setPosition(particle.getPosition());
+        particleShape.setFillColor(sf::Color::Green);
+        window.draw(particleShape);
     }
 }
+
 int main() {
     // Create SFML window
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Bouncing Application");
     window.setFramerateLimit(70); // Limit frame rate to 60 FPS
-
-    // Mutex for synchronization
-    std::mutex mutex;
 
     sf::Clock clock;
     sf::Clock deltaClock;
@@ -303,12 +303,13 @@ int main() {
     // Define spawn point for Angle Setting and Speed Setting
     sf::Vector2f spawnPoint(640.0f, 360.0f); // Default spawn point
 
-    //unsigned int numThreads = std::thread::hardware_concurrency();
-    unsigned int numThreads = 128;
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    //unsigned int numThreads = 32;
     // Create a thread pool with the desired number of threads
     ThreadPool threadPool(numThreads);
 
-
+    // Mutex for synchronization
+    std::mutex mutex;
 
     // Main loop
     
@@ -459,11 +460,8 @@ int main() {
         // Clear window
         window.clear(sf::Color::Black);
 
-
-        // Render walls (from main thread)
+        // Render walls and particles
         renderWalls(window, walls, mutex);
-
-        // Render particles (from main thread)
         renderParticles(particles, window, mutex);
 
         // Render ImGui interface
