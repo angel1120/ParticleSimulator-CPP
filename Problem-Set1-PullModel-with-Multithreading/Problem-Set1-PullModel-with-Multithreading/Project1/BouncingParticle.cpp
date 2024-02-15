@@ -78,7 +78,6 @@ private:
     bool stop;
 };
 
-
 // Particle class definition
 class Particle {
 public:
@@ -244,11 +243,34 @@ private:
         return normal;
     }
 };
+// Function to render walls using SFML draw function
+void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& walls, std::mutex& mutex) {
+    // Lock mutex to ensure exclusive access to the window
+    std::lock_guard<std::mutex> lock(mutex);
 
+    // Render walls
+    for (const auto& wall : walls) {
+        window.draw(wall);
+    }
+}
+
+// Function to render particles
+void renderParticles(const std::vector<Particle>& particles, sf::RenderWindow& window, std::mutex& mutex) {
+    // Lock mutex to ensure exclusive access to the window
+    std::lock_guard<std::mutex> lock(mutex);
+
+    // Render particles
+    for (const auto& particle : particles) {
+        particle.render(window);
+    }
+}
 int main() {
     // Create SFML window
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Bouncing Application");
     window.setFramerateLimit(70); // Limit frame rate to 60 FPS
+
+    // Mutex for synchronization
+    std::mutex mutex;
 
     sf::Clock clock;
     sf::Clock deltaClock;
@@ -281,8 +303,8 @@ int main() {
     // Define spawn point for Angle Setting and Speed Setting
     sf::Vector2f spawnPoint(640.0f, 360.0f); // Default spawn point
 
-    unsigned int numThreads = std::thread::hardware_concurrency();
-    //unsigned int numThreads = 32;
+    //unsigned int numThreads = std::thread::hardware_concurrency();
+    unsigned int numThreads = 128;
     // Create a thread pool with the desired number of threads
     ThreadPool threadPool(numThreads);
 
@@ -436,14 +458,13 @@ int main() {
 
         // Clear window
         window.clear(sf::Color::Black);
-        for (auto& wall : walls) {
-            window.draw(wall);
-        }
 
-        // Render particles
-        for (auto& particle : particles) {
-            particle.render(window);
-        }
+
+        // Render walls (from main thread)
+        renderWalls(window, walls, mutex);
+
+        // Render particles (from main thread)
+        renderParticles(particles, window, mutex);
 
         // Render ImGui interface
         ImGui::SFML::Render(window);
