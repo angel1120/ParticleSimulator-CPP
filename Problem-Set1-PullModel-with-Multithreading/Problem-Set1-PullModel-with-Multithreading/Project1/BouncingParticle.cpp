@@ -17,6 +17,7 @@
 #include <functional>
 #include <condition_variable>
 #include <utility>
+#include <stdexcept>
 
 template<typename T>
 const T& clamp(const T& value, const T& min, const T& max) {
@@ -26,8 +27,8 @@ const T& clamp(const T& value, const T& min, const T& max) {
 
 class ThreadPool {
 public:
-    ThreadPool(int numThreads) : stop(false) {
-        for (int i = 0; i < numThreads; ++i) {
+    ThreadPool(size_t numThreads) : stop(false) {
+        for (size_t i = 0; i < numThreads; ++i) {
             threads.emplace_back([this] {
                 while (true) {
                     std::function<void()> task;
@@ -60,8 +61,6 @@ public:
     }
 
     template <class F, class... Args>
-
-    // In the ThreadPool class, modify the enqueue method as follows:
     void enqueue(F&& f, Args&&... args) {
         {
             std::unique_lock<std::mutex> lock(queueMutex);
@@ -463,6 +462,16 @@ int main() {
         // Render walls and particles
         renderWalls(window, walls, mutex);
         renderParticles(particles, window, mutex);
+        /*
+        for (auto& wall : walls) {
+            window.draw(wall);
+        }
+
+        // Render particles
+        for (auto& particle : particles) {
+            particle.render(window);
+        }
+        */
 
         // Render ImGui interface
         ImGui::SFML::Render(window);
