@@ -5,11 +5,7 @@ Particle simulation supported by threading and SFML library.
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Features](#features)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Sample Images](#sample-images)
-- [Contributing](#contributing)
 
 ## Introduction
 
@@ -38,6 +34,8 @@ _The VS must be 2022 version run on C++20 compiler_
 
 ![2. VC++ Directories](images/4.png)
 _Check the Include and Library directories and change it according to your machine's specs_
+
+
 
 Update these following files/directories based on your machine's file location
 
