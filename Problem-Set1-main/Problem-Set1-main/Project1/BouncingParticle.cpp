@@ -16,17 +16,15 @@ const T& clamp(const T& value, const T& min, const T& max) {
     return (value < min) ? min : ((max < value) ? max : value);
 }
 
-// Particle class definition
 class Particle {
 public:
     Particle(float startX, float startY, float speed, float angle)
         : position(startX, startY), velocity(speed* std::cos(angle), speed* std::sin(angle)), isCollided(false) {}
 
-    // Copy constructor
     Particle(const Particle& other)
         : position(other.position), velocity(other.velocity) {}
 
-    // Assignment operator
+
     Particle& operator=(const Particle& other) {
         if (this != &other) {
             std::lock(mutex, other.mutex); // Lock both mutexes to avoid deadlock
@@ -38,13 +36,11 @@ public:
         return *this;
     }
 
-    // Update the particle's position based on velocity
     void update(float deltaTime, int canvasWidth, int canvasHeight, const std::vector<sf::VertexArray>& walls) {
         std::lock_guard<std::mutex> lock(mutex);
 
         sf::Vector2f nextPosition = position + velocity * deltaTime;
 
-        // Check collision with canvas edges
         if (nextPosition.x < 0 || nextPosition.x > canvasWidth) {
             velocity.x = -velocity.x;
             nextPosition.x = clamp(nextPosition.x, 0.0f, static_cast<float>(canvasWidth));
@@ -61,23 +57,14 @@ public:
                     if (intersects(position, nextPosition, p1, p2)) {
                         isCollided = true;
 
-                        //std::cout << "Collision detected!" << std::endl;
-                        // Compute reflection vector
                         sf::Vector2f normal = getNormal(p1, p2);
 
 
-                        // Ensure the normal is correctly normalized
-                        // sf::Vector2f normalized = normal / std::sqrt(normal.x * normal.x + normal.y * normal.y);
-
                         float dotProduct = velocity.x * normal.x + velocity.y * normal.y;
-                        //std::cout << "dotProduct: " << dotProduct << " normal.x: " << normal.x << " normal.y: " << normal.y << std::endl;
                         sf::Vector2f reflection = velocity - 2.0f * dotProduct * normal;
-                        //std::cout << "reflection.x: " << reflection.x << " reflection.y: " << reflection.y << std::endl;
-                        // Update next position
-                        nextPosition = getCollisionPoint(position, nextPosition, p1, p2);
-                        //std::cout << "position.x: " << position.x << " position.y: " << position.y << " nextPosition.x: " << nextPosition.x << " nextPosition.y: " << nextPosition.y << std::endl;
 
-                        // Update velocity while maintaining magnitude
+                        nextPosition = getCollisionPoint(position, nextPosition, p1, p2);
+
                         velocity = reflection;
                         break;
                     }
@@ -88,24 +75,18 @@ public:
             isCollided = false;
         }
 
-        //std::cout << "position.x: " << position.x << " position.y: " << position.y << " velocity.x: " << velocity.x << " velocity.y: " << velocity.y << std::endl;
-
-        // Update position
         position = nextPosition;
     }
 
 
-    // Getter for position
     sf::Vector2f getPosition() const {
         return position;
     }
 
-    // Getter for velocity
     sf::Vector2f getVelocity() const {
         return velocity;
     }
 
-    // Render the particle on the given render window
     void render(sf::RenderWindow& window) const {
         std::lock_guard<std::mutex> lock(mutex);
 
@@ -118,10 +99,9 @@ public:
 private:
     sf::Vector2f position;
     sf::Vector2f velocity;
-    mutable std::mutex mutex; // Mutex for thread safety
-    bool isCollided; // Flag to indicate whether a collision has been detected in the previous update
+    mutable std::mutex mutex;
+    bool isCollided; 
 
-    // Function to get the collision point between a particle and a wall segment
     sf::Vector2f getCollisionPoint(const sf::Vector2f& startPos, const sf::Vector2f& endPos, const sf::Vector2f& wallStart, const sf::Vector2f& wallEnd) {
         sf::Vector2f collisionPoint;
 
@@ -132,22 +112,18 @@ private:
 
         float denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
 
-        // Check if the lines are parallel
         if (denom == 0) {
-            // If the lines are parallel, return the end position
             return endPos;
         }
 
         float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
         float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
 
-        // Check if the intersection point lies within the line segments
         if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
             collisionPoint.x = x1 + t * (x2 - x1);
             collisionPoint.y = y1 + t * (y2 - y1);
         }
         else {
-            // If the intersection point lies outside the line segments, return the end position
             return endPos;
         }
 
@@ -167,13 +143,10 @@ private:
     }
 
     sf::Vector2f getNormal(const sf::Vector2f& p1, const sf::Vector2f& p2) {
-        // Compute the direction vector of the wall segment
         sf::Vector2f direction = p2 - p1;
 
-        // Compute the normal vector
-        sf::Vector2f normal(-direction.y, direction.x); // Rotate direction vector 90 degrees
+        sf::Vector2f normal(-direction.y, direction.x);
 
-        // Normalize the normal vector
         float length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
         if (length != 0) {
             normal.x /= length;
@@ -185,11 +158,10 @@ private:
 };
 
 int main() {
-    // Create SFML window
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Bouncing Application");
-    window.setFramerateLimit(70); // Limit frame rate to 60 FPS
+    window.setFramerateLimit(70); 
 
-    sf::Font font; // Default font provided by SFML
+    sf::Font font;
 
 
     sf::Clock clock;
@@ -199,11 +171,8 @@ int main() {
     float fps = 0;
     auto lastFpsTime = std::chrono::steady_clock::now();
 
-
-    // Setup ImGui
     ImGui::SFML::Init(window);
 
-    // Particle system parameters
     std::vector<Particle> particles;
     float canvasWidth = 1280.0f;
     float canvasHeight = 720.0f;
@@ -213,30 +182,24 @@ int main() {
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-    float angle = 45.0f * M_PI / 180.0f; // Convert angle to radians
+    float angle = 45.0f * M_PI / 180.0f;
     int numParticles = 1;
     std::vector<sf::VertexArray> walls;
 
     bool isDrawingLine = false;
-    // Line parameters
-    sf::Vector2f lineStart(100.0f, 360.0f); // Default line start point
-    sf::Vector2f lineEnd(1180.0f, 360.0f);  // Default line end point
+    sf::Vector2f lineStart(100.0f, 360.0f); 
+    sf::Vector2f lineEnd(1180.0f, 360.0f);  
 
-    // Define spawn point for Angle Setting and Speed Setting
-    sf::Vector2f spawnPoint(640.0f, 360.0f); // Default spawn point
-
-
-    // Main loop
+    sf::Vector2f spawnPoint(640.0f, 360.0f); 
 
     while (window.isOpen()) {
-        // Process events
         sf::Event event;
         while (window.pollEvent(event)) {
             ImGui::SFML::ProcessEvent(event);
 
             if (event.type == sf::Event::Closed) {
                 window.close();
-            }//the following code considers the wall feature, feel free to comment out
+            }
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 if (!ImGui::GetIO().WantCaptureMouse) {
                     if (!isDrawingLine) {
@@ -253,19 +216,14 @@ int main() {
                 }
             }
         }
-
-        // Get elapsed time since last frame
         float deltaTime = clock.restart().asSeconds();
 
-        // ImGui interface
-        //ImGui::SFML::Update(window, sf::seconds(deltaTime));
+
         ImGui::SFML::Update(window, deltaClock.restart());
 
         ImGui::Begin("Particle Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        // Display FPS at the bottom of the setting UI
 
         ImGui::Separator();
-        // FPS display
         auto currentTime = std::chrono::steady_clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
         if (elapsedTime >= 0.5) {
@@ -278,9 +236,7 @@ int main() {
 
         ImGui::Separator();
 
-        // Tabs for different settings
         if (ImGui::BeginTabBar("Settings Tabs")) {
-            // Line Setting UI
             if (ImGui::BeginTabItem("Line Setting")) {
                 ImGui::SliderFloat("Line Start X", &lineStart.x, 0.0f, canvasWidth);
                 ImGui::SliderFloat("Line Start Y", &lineStart.y, 0.0f, canvasHeight);
@@ -290,12 +246,11 @@ int main() {
                 ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
                 ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
                 if (ImGui::Button("Generate Particles")) {
-                    // Generate particles equally spaced along the line
                     particles.clear();
                     for (int i = 0; i < numParticles; ++i) {
                         float t = 0.0f;
                         if (numParticles > 1) {
-                            t = static_cast<float>(i) / (numParticles - 1); // t ranges from 0 to 1
+                            t = static_cast<float>(i) / (numParticles - 1);
                         }
                         sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
                         particles.emplace_back(position.x, position.y, speed, angle);
@@ -304,7 +259,6 @@ int main() {
                 ImGui::EndTabItem();
             }
 
-            // Angle Setting UI
             if (ImGui::BeginTabItem("Angle Setting")) {
                 ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
                 ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
@@ -313,7 +267,6 @@ int main() {
                 ImGui::SliderFloat("Velocity", &speed, 50.0f, 500.0f);
                 ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
                 if (ImGui::Button("Generate Particles")) {
-                    // Generate particles equally spaced along the angle
                     particles.clear();
                     float angleIncrement = 0.0f;
                     if (numParticles > 1) {
@@ -321,7 +274,6 @@ int main() {
                     }
                     for (int i = 0; i < numParticles; ++i) {
                         float currentAngle = startAngle + i * angleIncrement;
-                        //float radians = currentAngle * 3.14159f / 180.0f; // Convert degrees to radians
                         sf::Vector2f position = lineStart;
                         particles.emplace_back(position.x, position.y, speed, currentAngle);
                     }
@@ -329,16 +281,14 @@ int main() {
                 ImGui::EndTabItem();
             }
 
-            // Speed Setting UI
             if (ImGui::BeginTabItem("Speed Setting")) {
                 ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
                 ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
                 ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
                 ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
                 if (ImGui::Button("Generate Particles")) {
-                    // Generate particles with equally different speeds
                     particles.clear();
-                    float speedIncrement = 450.0f / numParticles; // Speed ranges from 50 to 500
+                    float speedIncrement = 450.0f / numParticles;
                     for (int i = 0; i < numParticles; ++i) {
                         float currentSpeed = 50.0f + i * speedIncrement;
                         sf::Vector2f position = lineStart;
@@ -363,33 +313,26 @@ int main() {
 
         ImGui::End();
 
-
-        // Clear window
         window.clear(sf::Color::Black);
         for (auto& wall : walls) {
             window.draw(wall);
         }
 
-        // Update particle system
         for (auto& particle : particles) {
             particle.update(deltaTime, canvasWidth, canvasHeight, walls);
         }
 
-        // Render particles
         for (auto& particle : particles) {
             particle.render(window);
         }
 
-        // Render ImGui interface
         ImGui::SFML::Render(window);
 
-        // Display window
         window.display();
 
         frameCount++;
     }
 
-    // Cleanup
     ImGui::SFML::Shutdown();
 
     return 0;

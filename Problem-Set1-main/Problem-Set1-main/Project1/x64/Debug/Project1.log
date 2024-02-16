@@ -1,13 +1,6 @@
-﻿  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  imgui-SFML.cpp
-  BouncingParticle.cpp
-C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(216,17): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(272,29): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(375,53): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(375,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-  Generating Code...
+﻿  BouncingParticle.cpp
+C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(185,17): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(230,29): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(322,53): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\Project1\BouncingParticle.cpp(322,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   Project1.vcxproj -> C:\Users\edayo\Documents\sample\Problem-Set1-main\Problem-Set1-main\x64\Debug\Project1.exe
