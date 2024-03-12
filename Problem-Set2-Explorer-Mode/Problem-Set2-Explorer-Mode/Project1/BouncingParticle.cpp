@@ -377,7 +377,7 @@ int main() {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
-            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && developerMode) {
                 if (!ImGui::GetIO().WantCaptureMouse) {
                     if (!isDrawingLine) {
                         isDrawingLine = true;
@@ -404,7 +404,19 @@ int main() {
 
             // Developer mode UI
             ImGui::Begin("Developer Mode");
+            ImGui::Separator();
 
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
+            if (elapsedTime >= 0.5) {
+                double valid_fps = frameCount / elapsedTime;
+                fps = valid_fps;
+                frameCount = 0;
+                lastFpsTime = currentTime;
+            }
+            ImGui::Text("FPS: %.1f", fps);
+
+            ImGui::Separator();
             // Checkbox to switch to Explorer mode
             if (ImGui::Checkbox("Explorer Mode", &developerMode)) {
                 // Logic to handle switching between modes if the checkbox is clicked
@@ -418,18 +430,6 @@ int main() {
             // For example, render walls, particles, and the circular object controlled by keyboard
 
             ImGui::Begin("Particle Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-            ImGui::Separator();
-
-            auto currentTime = std::chrono::steady_clock::now();
-            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
-            if (elapsedTime >= 0.5) {
-                double valid_fps = frameCount / elapsedTime;
-                fps = valid_fps;
-                frameCount = 0;
-                lastFpsTime = currentTime;
-            }
-            ImGui::Text("FPS: %.1f", fps);
 
             ImGui::Separator();
 
@@ -525,6 +525,17 @@ int main() {
         else {
             // Explorer mode UI
             ImGui::Begin("Explorer Mode");
+            ImGui::Separator();
+
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
+            if (elapsedTime >= 0.5) {
+                double valid_fps = frameCount / elapsedTime;
+                fps = valid_fps;
+                frameCount = 0;
+                lastFpsTime = currentTime;
+            }
+            ImGui::Text("FPS: %.1f", fps);
 
             if (ImGui::Checkbox("Developer Mode", &developerMode)) {
                 if (developerMode) {

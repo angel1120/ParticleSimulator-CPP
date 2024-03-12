@@ -1,4 +1,5 @@
 ﻿  BouncingParticle.cpp
 C:\Users\edayo\Documents\sample\Problem-Set2-Explorer-Mode\Problem-Set2-Explorer-Mode\Project1\BouncingParticle.cpp(348,17): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\edayo\Documents\sample\Problem-Set2-Explorer-Mode\Problem-Set2-Explorer-Mode\Project1\BouncingParticle.cpp(428,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\edayo\Documents\sample\Problem-Set2-Explorer-Mode\Problem-Set2-Explorer-Mode\Project1\BouncingParticle.cpp(413,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\edayo\Documents\sample\Problem-Set2-Explorer-Mode\Problem-Set2-Explorer-Mode\Project1\BouncingParticle.cpp(534,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   Project1.vcxproj -> C:\Users\edayo\Documents\sample\Problem-Set2-Explorer-Mode\Problem-Set2-Explorer-Mode\x64\Debug\Project1.exe
