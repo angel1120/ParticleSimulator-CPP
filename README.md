@@ -9,7 +9,7 @@ Particle simulation supported by threading and SFML library.
 
 ## Introduction
 
-This application simulates bouncing particles. There are 3 different ways to spawn the particle. First is specifying the starting line where particles spawn. Second is specifying 2 angles where particle are arranged. Lastly each particles will have different velocity. In addition to controlling the parameters or constants, the application allows you to switch between explorer mode and developer mode. Developer mode is responsible for controlling the behavior of particle spawn. While explorer mode displays the periphery of the sprite, which is distinguished as red circular ball. To switch between two modes, click the checkbox as indicated in the images below.
+This application simulates bouncing particles. There are 3 different ways to spawn the particle. First is specifying the starting line where particles spawn. Second is specifying 2 angles where particle are arranged. Lastly each particles will have different velocity. In addition to controlling the parameters or constants, the application allows you to switch between explorer mode and developer mode. Developer mode is responsible for controlling the behavior of particle spawn. While explorer mode displays the periphery of the sprite, which is distinguished as red circular ball. During the explorer mode, the user can dictate the movement of sprite using keys w (up), a (left), s (down), d (right). To switch between two modes, tick the checkbox as indicated in the images below.
 
 ### Explorer Mode
 
