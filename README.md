@@ -14,17 +14,22 @@ This application simulates bouncing particles. There are 3 different ways to spa
 <img src="images/demo4.png" alt="Explorer Mode" width="550" height="350">
 _Explorer Mode_
 
+
 <img src="images/demo5.png" alt="Developer Mode" width="550" height="350">
 _Developer Mode_
+
 
 <img src="images/demo1.png" alt="Feature 1: Equidistant Line Segments" width="550" height="350">
 _1st batch_
 
+
 <img src="images/demo2.png" alt="Feature 2: Equidistant Angle" width="550" height="350">
 _2nd batch_
 
+
 <img src="images/demo3.png" alt="Feature 3: Equidifferent Speed" width="550" height="350">
 _3rd batch_
+
 
 ## Installation
 
@@ -32,44 +37,44 @@ The required IDE to run this application is VS2022. Please be reminded that this
 
 To compile the cpp file clone or download this repository. Open the solution folder inside `Problem-Set2-Explorer-Mode` and then follow the guide below to update the directories inside the project property. All external libraries are contained in this repo.
 
-- Project directory
 
+- Project directory
 <img src="images/2.png" title="Project directory" alt="Project directory" width="600">
 _Your current directory should look like this_
 
-1. General Configuration
 
+1. General Configuration
 <img src="images/3.png" alt="1. General Configuration" width="600">
 _The Visual Studio must be version 2022 running on a C++20 compiler_
+
 
 <img src="images/2.5.png" alt="1.5. Opening Project Properties" width="600">
 _Click the setting icon as indicated in the image_
 
-2. VC++ Directories
 
+2. VC++ Directories
 <img src="images/4.png" alt="2. VC++ Directories" width="600">
 _Check the Include and Library directories and change them according to your machine's specifications_
-
 _Update the following files/directories based on your machine's file location:_
 
-3. Configure C++
 
+3. Configure C++
 <img src="images/5.png" alt="3. Configure C++" width="600">
 
-4. Configure Linker/General
 
+4. Configure Linker/General
 <img src="images/6.png" alt="4. Configure Linker/General" width="600">
 
-5. Configure Linker/Input
 
+5. Configure Linker/Input
 <img src="images/7.png" alt="5. Configure Linker/Input" width="600">
 
-6. Copy the required dll files
 
+6. Copy the required dll files
 <img src="images/8.png" alt="6. Copy the required DLL files" width="600">
 _You need `sfml-graphics-2.dll`, `sfml-system-2.dll`, and `sfml-window-2.dll` pasted in the directory where the executable file is located_
 
-7. Paste the files to the application folder
 
+7. Paste the files to the application folder
 <img src="images/9.png" alt="7. Paste the files to the application folder" width="600">
 _After pasting the files, IDE can compile and run the particle simulator application_
