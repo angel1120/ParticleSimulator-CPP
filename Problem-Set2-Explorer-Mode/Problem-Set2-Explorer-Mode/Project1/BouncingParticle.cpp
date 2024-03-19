@@ -223,7 +223,10 @@ private:
     }
 };
 
-void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& walls, std::mutex& mutex, float scale) {
+void renderWalls(sf::RenderWindow& window, 
+                const std::vector<sf::VertexArray>& walls,  
+                std::mutex& mutex, 
+                float scale) {
     std::lock_guard<std::mutex> lock(mutex);
     for (const auto& wall : walls) {
         // Create a transformed copy of the wall vertices with the given scale
@@ -235,7 +238,10 @@ void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& w
     }
 }
 
-void renderParticles(const std::vector<Particle>& particles, sf::RenderWindow& window, std::mutex& mutex, float scale) {
+void renderParticles(const std::vector<Particle>& particles, 
+                    sf::RenderWindow& window, 
+                    std::mutex& mutex, 
+                    float scale) {
     std::lock_guard<std::mutex> lock(mutex);
     for (const auto& particle : particles) {
         sf::CircleShape particleShape(5.0f * scale); // Adjust particle size based on scale
@@ -314,7 +320,8 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
                 ball.move(0, speed);
             }
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && 
+            ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
             sf::Vector2f nextPosition = ball.getPosition();
             nextPosition.x += speed;
             if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
@@ -360,7 +367,11 @@ int main() {
     ball.setFillColor(sf::Color::Red);
     ball.setPosition(640, 360); // Initial position
 
-    std::thread inputThread(&handleInput, std::ref(ball), canvasWidth, canvasHeight, std::ref(walls));
+    std::thread inputThread(&handleInput, 
+                            std::ref(ball), 
+                            canvasWidth, 
+                            canvasHeight,  
+                            std::ref(walls));
 
 
     unsigned int numThreads = std::thread::hardware_concurrency();
@@ -564,12 +575,12 @@ int main() {
 
 
             // Set the view to show the zoomed-in area
-            sf::View zoomedInView(sf::FloatRect(zoomedInLeft, zoomedInTop, zoomedInRight - zoomedInLeft, zoomedInBottom - zoomedInTop));
+            sf::View zoomedInView(sf::FloatRect(zoomedInLeft, 
+                                zoomedInTop, 
+                                zoomedInRight - zoomedInLeft, 
+                                zoomedInBottom - zoomedInTop));
             window.setView(zoomedInView);
 
-
-            // Render the scaled-up particles and walls
-            // Scale the size of walls
             //scaling walls width does not work
             renderWalls(window, walls, mutex, 1.0f);
             renderParticles(particles, window, mutex, 1.0f);
