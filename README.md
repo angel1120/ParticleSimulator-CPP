@@ -9,44 +9,75 @@ Particle simulation supported by threading and SFML library.
 
 ## Introduction
 
-This application simulates bouncing particles. There are 3 different ways to spawn the particle. First is specifying the starting line where particles spawn. Second is specifying 2 angles where particle are arranged. Lastly each particles will have different velocity. In addition to controlling the parameters or constants, the application allows you to draw multiple walls. The goal of application is to retain 50-60FPS as we increase the number of particles, however the performance varies by specs of local machine.
+This application simulates bouncing particles. There are 3 different ways to spawn the particle. First is specifying the starting line where particles spawn. Second is specifying 2 angles where particle are arranged. Lastly each particles will have different velocity. In addition to controlling the parameters or constants, the application allows you to switch between explorer mode and developer mode. Developer mode is responsible for controlling the behavior of particle spawn. While explorer mode displays the periphery of the sprite, which is distinguished as red circular ball. During the explorer mode, the user can dictate the movement of sprite using keys w (up), a (left), s (down), d (right). To switch between two modes, tick the checkbox as indicated in the images below.
 
-![Feature 1](images/demo1.png)
+### Explorer Mode
+
+<img src="images/demo4.png" alt="Explorer Mode" width="550" height="350">
+_Explorer Mode_
+
+### Developer Mode
+
+<img src="images/demo5.png" alt="Developer Mode" width="550" height="350">
+_Developer Mode_
+
+### Feature 1: Equidistant Line Segments
+
+<img src="images/demo1.png" alt="Feature 1: Equidistant Line Segments" width="550" height="350">
 _1st batch_
 
-![Feature 2](images/demo2.png)
+### Feature 2: Equidistant Angle
+
+<img src="images/demo2.png" alt="Feature 2: Equidistant Angle" width="550" height="350">
 _2nd batch_
 
-![Feature 3](images/demo3.png)
+### Feature 3: Equidifferent Speed
+
+<img src="images/demo3.png" alt="Feature 3: Equidifferent Speed" width="550" height="350">
 _3rd batch_
 
 ## Installation
 
 The required IDE to run this application is VS2022. Please be reminded that this application is not compatible with the VS2019.
 
-To compile the cpp file clone or download this repository. Open the solution folder inside `Problem-Set1-PullModel-with-Multithreading` and then follow the guide below to update the directories inside the project property. All external libraries are contained in this repo.
+To compile the cpp file clone or download this repository. Open the solution folder inside `Problem-Set2-Explorer-Mode` and then follow the guide below to update the directories inside the project property. All external libraries are contained in this repo.
 
-![Project directory](images/2.png)
-_You current directory shold look like this_
+1. **Project directory**
 
-![1. General Configuration](images/3.png)
-_The VS must be 2022 version run on C++20 compiler_
+<img src="images/2.png" alt="Project directory" width="600">
+_Your current directory should look like this_
 
-![2. VC++ Directories](images/4.png)
-_Check the Include and Library directories and change it according to your machine's specs_
+2. **General Configuration**
 
+<img src="images/3.png" alt="General Configuration" width="600">
+_The Visual Studio must be version 2022 running on a C++20 compiler_
 
+![Opening Project Properties](images/2.5.png)
+_Click the setting icon as indicated in the image_
 
-Update these following files/directories based on your machine's file location
+3. **VC++ Directories**
 
-![3. Configure C++](images/5.png)
+<img src="images/4.png" alt="VC++ Directories" width="600">
+_Check the Include and Library directories and change them according to your machine's specifications_
 
-![4. Configure Linker/General](images/6.png)
+4. **Configure C++**
 
-![5. Configure Linker/Input](images/7.png)
+<img src="images/5.png" alt="Configure C++" width="600">
 
-![6. Copy the required dll files](images/8.png)
-_You need sfml-grahics-2.dll, sfml-system-2.dll, and sfml-window-2.dll pasted at the directory where executable file is located_
+5. **Configure Linker/General**
 
-![7. Paste the files to the application folder](images/9.png)
-_After pasting the files, you can compile and run the application_
+<img src="images/6.png" alt="Configure Linker/General" width="600">
+
+6. **Configure Linker/Input**
+
+<img src="images/7.png" alt="Configure Linker/Input" width="600">
+
+7. **Copy the required DLL files**
+
+<img src="images/8.png" alt="Copy the required DLL files" width="600">
+_You need `sfml-graphics-2.dll`, `sfml-system-2.dll`, and `sfml-window-2.dll` pasted in the directory where the executable file is located_
+
+8. **Paste the files to the application folder**
+
+<img src="images/9.png" alt="Paste the files to the application folder" width="600">
+_After pasting the files, IDE can compile and run the particle simulator application_

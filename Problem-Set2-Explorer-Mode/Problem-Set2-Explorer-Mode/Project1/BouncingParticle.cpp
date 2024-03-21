@@ -223,7 +223,10 @@ private:
     }
 };
 
-void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& walls, std::mutex& mutex, float scale) {
+void renderWalls(sf::RenderWindow& window, 
+                const std::vector<sf::VertexArray>& walls,  
+                std::mutex& mutex, 
+                float scale) {
     std::lock_guard<std::mutex> lock(mutex);
     for (const auto& wall : walls) {
         // Create a transformed copy of the wall vertices with the given scale
@@ -235,7 +238,10 @@ void renderWalls(sf::RenderWindow& window, const std::vector<sf::VertexArray>& w
     }
 }
 
-void renderParticles(const std::vector<Particle>& particles, sf::RenderWindow& window, std::mutex& mutex, float scale) {
+void renderParticles(const std::vector<Particle>& particles, 
+                    sf::RenderWindow& window, 
+                    std::mutex& mutex, 
+                    float scale) {
     std::lock_guard<std::mutex> lock(mutex);
     for (const auto& particle : particles) {
         sf::CircleShape particleShape(5.0f * scale); // Adjust particle size based on scale
@@ -290,35 +296,39 @@ bool collidesWithWalls(const sf::Vector2f& position, const std::vector<sf::Verte
     return false; // No collision detected
 }
 
-void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls) {
+void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls, bool& developerMode) {
     const float speed = 5.0f;
+    std::cout << developerMode << std::endl;
     while (true) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && ball.getPosition().y >= 0) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.y -= speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(0, -speed);
+        if(!developerMode){
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && ball.getPosition().y >= 0) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.y -= speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(0, -speed);
+                }
             }
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) && ball.getPosition().x >= 0) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.x -= speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(-speed, 0);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) && ball.getPosition().x >= 0) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.x -= speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(-speed, 0);
+                }
             }
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && ball.getPosition().y + ball.getRadius() + RADIUS < canvasHeight) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.y += speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(0, speed);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && ball.getPosition().y + ball.getRadius() + RADIUS < canvasHeight) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.y += speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(0, speed);
+                }
             }
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.x += speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(speed, 0);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) &&
+                ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.x += speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(speed, 0);
+                }
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -360,7 +370,12 @@ int main() {
     ball.setFillColor(sf::Color::Red);
     ball.setPosition(640, 360); // Initial position
 
-    std::thread inputThread(&handleInput, std::ref(ball), canvasWidth, canvasHeight, std::ref(walls));
+    std::thread inputThread(&handleInput,
+                            std::ref(ball),
+                            canvasWidth,
+                            canvasHeight,
+                            std::ref(walls),
+                            std::ref(developerMode));
 
 
     unsigned int numThreads = std::thread::hardware_concurrency();
@@ -417,17 +432,11 @@ int main() {
             ImGui::Text("FPS: %.1f", fps);
 
             ImGui::Separator();
-            // Checkbox to switch to Explorer mode
             if (ImGui::Checkbox("Explorer Mode", &developerMode)) {
-                // Logic to handle switching between modes if the checkbox is clicked
-                // For example, you could reset the view or update other settings
+               // std::cout << developerMode << std::endl;
             }
 
             ImGui::End();
-
-            // Your existing developer mode UI and logic
-            // Add any additional UI elements specific to Developer mode here
-            // For example, render walls, particles, and the circular object controlled by keyboard
 
             ImGui::Begin("Particle Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -447,7 +456,7 @@ int main() {
                         for (int i = 0; i < numParticles; ++i) {
                             float t = 0.0f;
                             if (numParticles > 1) {
-                                t = static_cast<float>(i) / (numParticles - 1); // t ranges from 0 to 1
+                                t = static_cast<float>(i) / (numParticles - 1);
                             }
                             sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
                             particles.emplace_back(position.x, position.y, speed, angle);
@@ -485,7 +494,7 @@ int main() {
                     ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
                     if (ImGui::Button("Generate Particles")) {
                         particles.clear();
-                        float speedIncrement = 450.0f / numParticles; // Speed ranges from 50 to 500
+                        float speedIncrement = 450.0f / numParticles; 
                         for (int i = 0; i < numParticles; ++i) {
                             float currentSpeed = 50.0f + i * speedIncrement;
                             sf::Vector2f position = lineStart;
@@ -521,6 +530,7 @@ int main() {
             renderWalls(window, walls, mutex, 1.0f);
             renderParticles(particles, window, mutex, 1.0f);
 
+            window.draw(ball);
         }
         else {
             // Explorer mode UI
@@ -538,14 +548,12 @@ int main() {
             ImGui::Text("FPS: %.1f", fps);
 
             if (ImGui::Checkbox("Developer Mode", &developerMode)) {
+                //std::cout << developerMode << std::endl;
                 if (developerMode) {
-                    // Set the view to cover the entire canvas area
                     window.setView(window.getDefaultView());
                 }
             }
 
-            // Render settings specific to explorer mode
-            // Add any additional UI elements specific to Explorer mode here
 
             ImGui::End();
 
@@ -563,14 +571,12 @@ int main() {
 
 
 
-            // Set the view to show the zoomed-in area
-            sf::View zoomedInView(sf::FloatRect(zoomedInLeft, zoomedInTop, zoomedInRight - zoomedInLeft, zoomedInBottom - zoomedInTop));
+            sf::View zoomedInView(sf::FloatRect(zoomedInLeft, 
+                                zoomedInTop, 
+                                zoomedInRight - zoomedInLeft, 
+                                zoomedInBottom - zoomedInTop));
             window.setView(zoomedInView);
 
-
-            // Render the scaled-up particles and walls
-            // Scale the size of walls
-            //scaling walls width does not work
             renderWalls(window, walls, mutex, 1.0f);
             renderParticles(particles, window, mutex, 1.0f);
 
