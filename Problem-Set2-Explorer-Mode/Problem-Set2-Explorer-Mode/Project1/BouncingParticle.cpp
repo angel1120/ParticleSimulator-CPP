@@ -336,7 +336,7 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 }
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(1280, 720), "Particle Bouncing Application");
+    sf::RenderWindow window(sf::VideoMode(1280+10, 720+10), "Particle Bouncing Application"); // adjusting size for aesthetic purposes, canvas walls are still 1280 x 720
     window.setFramerateLimit(60);
 
     sf::Clock clock;
