@@ -3,7 +3,7 @@ C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Cli
 C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(371,54): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
 C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(402,54): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
 C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(433,54): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(533,17): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(563,46): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(738,19): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(573,17): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(603,46): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\Client1.cpp(786,19): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   Client1.vcxproj -> C:\Users\Angel\Desktop\PSET3\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\x64\Debug\Client1.exe

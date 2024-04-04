@@ -363,6 +363,37 @@ void receivePackets(SOCKET clientSocket) {
 }
 
 
+void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, float speed, float angle) {
+    // Serialize and send each particle's position
+    for (const auto& particle : particles) {
+        sf::Vector2f position = particle.getPosition();
+        if (send(clientSocket, reinterpret_cast<const char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
+            // Handle error
+            std::cerr << "Error sending particle position." << std::endl;
+            return;
+        }
+
+
+        // Serialize and send speed
+        if (send(clientSocket, reinterpret_cast<const char*>(&speed), sizeof(speed), 0) == SOCKET_ERROR) {
+            std::cerr << "Error sending particle speed." << std::endl;
+            return;
+        }
+
+        // Serialize and send angle
+        if (send(clientSocket, reinterpret_cast<const char*>(&angle), sizeof(angle), 0) == SOCKET_ERROR) {
+            std::cerr << "Error sending particle angle." << std::endl;
+            return;
+        }
+
+
+    //    else {
+    //        std::cout << "Acknowledgment: Particles sent successfully!" << std::endl;
+    //    }
+    }
+}
+
+
 int main() {
 
     // server
@@ -574,6 +605,10 @@ int main() {
                             }
                             sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
                             particles.emplace_back(position.x, position.y, speed, angle);
+
+                            // send the particles to the client
+                            sendParticles(clientSocket, particles, speed, angle);
+
                         }
                     }
                     ImGui::EndTabItem();
@@ -596,6 +631,10 @@ int main() {
                             float currentAngle = startAngle + i * angleIncrement;
                             sf::Vector2f position = lineStart;
                             particles.emplace_back(position.x, position.y, speed, currentAngle);
+
+                            // send the particles to the client
+                            sendParticles(clientSocket, particles, speed, currentAngle);
+
                         }
                     }
                     ImGui::EndTabItem();
@@ -613,6 +652,10 @@ int main() {
                             float currentSpeed = 50.0f + i * speedIncrement;
                             sf::Vector2f position = lineStart;
                             particles.emplace_back(position.x, position.y, currentSpeed, angle);
+
+                            // send the particles to the client
+                            sendParticles(clientSocket, particles, currentSpeed, angle);
+
                         }
                     }
                     ImGui::EndTabItem();

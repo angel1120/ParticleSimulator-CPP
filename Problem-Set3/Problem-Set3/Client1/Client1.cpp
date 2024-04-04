@@ -467,6 +467,46 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
     }
 }
 
+void receiveDataFromServer(SOCKET clientSocket, std::vector<Particle>& particles) {
+    while (true) {
+        sf::Vector2f position;
+        float receivedSpeed;
+        float receivedAngle;
+
+        // Receive particle position
+        if (recv(clientSocket, reinterpret_cast<char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
+            std::cerr << "Error receiving particle position." << std::endl;
+            break;
+        }
+
+        // Receive particle speed
+        if (recv(clientSocket, reinterpret_cast<char*>(&receivedSpeed), sizeof(receivedSpeed), 0) == SOCKET_ERROR) {
+            std::cerr << "Error receiving particle speed." << std::endl;
+            break;
+        }
+
+        // Receive particle angle
+        if (recv(clientSocket, reinterpret_cast<char*>(&receivedAngle), sizeof(receivedAngle), 0) == SOCKET_ERROR) {
+            std::cerr << "Error receiving particle angle." << std::endl;
+            break;
+        }
+
+    //    std::lock_guard<std::mutex> lock(mutex);
+
+        // Update the received data
+    //    speed = receivedSpeed;
+    //    angle = receivedAngle;
+
+        // Handle received data here
+        // For example, you can add the received particle to the particles vector
+        particles.emplace_back(position.x, position.y, receivedSpeed, receivedAngle);
+    }
+} 
+
+
+
+
+
 int main() {
 
     // Initialize WSA variables
@@ -497,7 +537,7 @@ int main() {
     // Connect to server
     sockaddr_in service;
     service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("192.168.212.136"); // Change to server IP address
+    service.sin_addr.s_addr = inet_addr("192.168.254.186"); // Change to server IP address
     service.sin_port = htons(55555); // Change to server port
     if (connect(clientSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
         std::cout << "Failed to connect." << std::endl;
@@ -578,6 +618,11 @@ int main() {
     // Mutex for synchronization
     std::mutex mutex;
 
+    std::thread receiveThread(receiveDataFromServer, clientSocket, std::ref(particles));
+ //   std::thread receiveThread(receiveParticles, std::ref(particles), clientSocket, std::ref(mutex));
+
+    
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -607,6 +652,9 @@ int main() {
 
 
         window.clear(sf::Color::Black);
+
+      
+
 
         /*    if (developerMode) {
                 window.setView(window.getDefaultView());
@@ -788,6 +836,7 @@ int main() {
 
     ImGui::SFML::Shutdown();
     inputThread.join();
+
 
     // Cleanup and close socket
     closesocket(clientSocket);
