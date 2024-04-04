@@ -6,6 +6,9 @@
 #include <SFML/Graphics.hpp>
 #include "imgui.h"
 #include "imgui-SFML.h"
+
+#include <SFML/Network.hpp> 
+
 #include <vector>
 #include <cmath>
 #include <random>
@@ -27,6 +30,9 @@
 #include <fstream>
 #include <string> // for std::string
 #include <sstream> // for std::stringstream
+
+
+std::atomic<sf::Vector2f> receivedBallPosition;
 
 template<typename T>
 const T& clamp(const T& value, const T& min, const T& max) {
@@ -337,6 +343,26 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 }
 
 
+// Function to receive packets from the client socket
+void receivePackets(SOCKET clientSocket) {
+    sf::Vector2f receivedPosition;
+    while (true) {
+        // Receive ball position from the client socket
+        if (recv(clientSocket, reinterpret_cast<char*>(&receivedPosition), sizeof(receivedPosition), 0) != SOCKET_ERROR) {
+            // Print the received position
+            std::cout << "Received ball position: (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
+            // Update the global variable with the received position
+            receivedBallPosition.store(receivedPosition, std::memory_order_relaxed);
+        }
+        else {
+            // Handle error or connection closed
+            // You may want to break out of the loop or handle the error in some other way
+            break;
+        }
+    }
+}
+
+
 int main() {
 
     // server
@@ -389,21 +415,22 @@ int main() {
     }
 
     // Accept incoming connections and handle clients concurrently
-    while (true) {
-        SOCKET clientSocket = accept(serverSocket, NULL, NULL);
-        if (clientSocket == INVALID_SOCKET) {
-            std::cout << "accept failed: " << WSAGetLastError() << std::endl;
-            closesocket(serverSocket);
-            WSACleanup();
-            return -1;
-        }
-        else {
-            std::cout << "accept() is on" << std::endl;
-        }
+    SOCKET clientSocket = accept(serverSocket, NULL, NULL);
+//    while (true) {
+        
+    if (clientSocket == INVALID_SOCKET) {
+        std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+        closesocket(serverSocket);
+        WSACleanup();
+        return -1;
+    }
+    else {
+        std::cout << "accept() is on" << std::endl;
+    }
 
         // add a ball when it is connected, use the default first 
 
-
+//    }
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -442,12 +469,13 @@ int main() {
         ball.setFillColor(sf::Color::Red);
         ball.setPosition(640, 360); // Initial position
 
-     /*   std::thread inputThread(&handleInput,
-            std::ref(ball),
-            canvasWidth,
-            canvasHeight,
-            std::ref(walls),
-            std::ref(developerMode)); */
+        /*   std::thread inputThread(&handleInput,
+               std::ref(ball),
+               canvasWidth,
+               canvasHeight,
+               std::ref(walls),
+               std::ref(developerMode)); */
+        std::thread receiveThread(receivePackets, clientSocket);
 
 
         unsigned int numThreads = std::thread::hardware_concurrency();
@@ -486,7 +514,21 @@ int main() {
 
             window.clear(sf::Color::Black);
 
-    //        if (developerMode) {
+
+            // Receive ball position from the client socket
+        /*    sf::Vector2f receivedBallPosition;
+            if (recv(clientSocket, reinterpret_cast<char*>(&receivedBallPosition), sizeof(receivedBallPosition), 0) != SOCKET_ERROR) {
+                // Update ball's position using the received position
+            //    ball.setPosition(receivedBallPosition);
+            } */
+           
+            ball.setPosition(receivedBallPosition);
+            // Main thread code here...
+
+            // Wait for the receive thread to finish
+        //    receiveThread.join();
+
+            //        if (developerMode) {
             window.setView(window.getDefaultView());
 
             // Developer mode UI
@@ -504,9 +546,9 @@ int main() {
             ImGui::Text("FPS: %.1f", fps);
 
             ImGui::Separator();
-        /*    if (ImGui::Checkbox("Explorer Mode", &developerMode)) {
-                // std::cout << developerMode << std::endl;
-            } */
+            /*    if (ImGui::Checkbox("Explorer Mode", &developerMode)) {
+                    // std::cout << developerMode << std::endl;
+                } */
 
             ImGui::End();
 
@@ -602,58 +644,62 @@ int main() {
             renderWalls(window, walls, mutex, 1.0f);
             renderParticles(particles, window, mutex, 1.0f);
 
-//                window.draw(ball);
-        //    }
-         /*   else {
-                // Explorer mode UI
-                ImGui::Begin("Explorer Mode");
-                ImGui::Separator();
 
-                auto currentTime = std::chrono::steady_clock::now();
-                auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
-                if (elapsedTime >= 0.5) {
-                    double valid_fps = frameCount / elapsedTime;
-                    fps = valid_fps;
-                    frameCount = 0;
-                    lastFpsTime = currentTime;
-                }
-                ImGui::Text("FPS: %.1f", fps);
+            // get updated postion of the ball
+           
+            
+            window.draw(ball);
+                    //    }
+                     /*   else {
+                            // Explorer mode UI
+                            ImGui::Begin("Explorer Mode");
+                            ImGui::Separator();
 
-                if (ImGui::Checkbox("Developer Mode", &developerMode)) {
-                    //std::cout << developerMode << std::endl;
-                    if (developerMode) {
-                        window.setView(window.getDefaultView());
-                    }
-                }
+                            auto currentTime = std::chrono::steady_clock::now();
+                            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
+                            if (elapsedTime >= 0.5) {
+                                double valid_fps = frameCount / elapsedTime;
+                                fps = valid_fps;
+                                frameCount = 0;
+                                lastFpsTime = currentTime;
+                            }
+                            ImGui::Text("FPS: %.1f", fps);
 
-
-                ImGui::End();
-
-                threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
-                    for (auto& particle : particles) {
-                        particle.update(deltaTime, canvasWidth, canvasHeight, walls);
-                    }
-                    });
-
-                float scale = 5.0f;
-                float zoomedInLeft = ball.getPosition().x - 16 * scale;
-                float zoomedInRight = ball.getPosition().x + 16 * scale;
-                float zoomedInTop = ball.getPosition().y - 9 * scale;
-                float zoomedInBottom = ball.getPosition().y + 9 * scale;
+                            if (ImGui::Checkbox("Developer Mode", &developerMode)) {
+                                //std::cout << developerMode << std::endl;
+                                if (developerMode) {
+                                    window.setView(window.getDefaultView());
+                                }
+                            }
 
 
+                            ImGui::End();
 
-                sf::View zoomedInView(sf::FloatRect(zoomedInLeft,
-                    zoomedInTop,
-                    zoomedInRight - zoomedInLeft,
-                    zoomedInBottom - zoomedInTop));
-                window.setView(zoomedInView);
+                            threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
+                                for (auto& particle : particles) {
+                                    particle.update(deltaTime, canvasWidth, canvasHeight, walls);
+                                }
+                                });
 
-                renderWalls(window, walls, mutex, 1.0f);
-                renderParticles(particles, window, mutex, 1.0f);
+                            float scale = 5.0f;
+                            float zoomedInLeft = ball.getPosition().x - 16 * scale;
+                            float zoomedInRight = ball.getPosition().x + 16 * scale;
+                            float zoomedInTop = ball.getPosition().y - 9 * scale;
+                            float zoomedInBottom = ball.getPosition().y + 9 * scale;
 
-                window.draw(ball);
-            } */
+
+
+                            sf::View zoomedInView(sf::FloatRect(zoomedInLeft,
+                                zoomedInTop,
+                                zoomedInRight - zoomedInLeft,
+                                zoomedInBottom - zoomedInTop));
+                            window.setView(zoomedInView);
+
+                            renderWalls(window, walls, mutex, 1.0f);
+                            renderParticles(particles, window, mutex, 1.0f);
+
+                            window.draw(ball);
+                        } */
 
 
 
@@ -666,11 +712,14 @@ int main() {
 
 
         ImGui::SFML::Shutdown();
-    //    inputThread.join();
 
-        // Cleanup and close sockets
+        receiveThread.join();
+        //    inputThread.join();
+
+            // Cleanup and close 
+
         closesocket(serverSocket);
         WSACleanup();
         return 0;
-    }
+    
 }
