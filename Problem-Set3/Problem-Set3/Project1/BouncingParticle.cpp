@@ -355,8 +355,6 @@ void receivePackets(SOCKET clientSocket) {
             receivedBallPosition.store(receivedPosition, std::memory_order_relaxed);
         }
         else {
-            // Handle error or connection closed
-            // You may want to break out of the loop or handle the error in some other way
             std::cout << "Connection closed or error occurred." << std::endl;
             receivedBallPosition = sf::Vector2f(-1000, -1000);
             break;
@@ -388,10 +386,6 @@ void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, 
             return;
         }
 
-
-    //    else {
-    //        std::cout << "Acknowledgment: Particles sent successfully!" << std::endl;
-    //    }
     }
 }
 

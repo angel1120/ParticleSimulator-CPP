@@ -1,16 +1,1 @@
-﻿  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  imgui-SFML.cpp
-  Client1.cpp
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(339,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(372,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(403,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(434,58): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(575,17): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(605,46): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Client1\Client1.cpp(788,19): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
-  Client1.vcxproj -> C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\x64\Debug\Client1.exe
+﻿
