@@ -1,12 +1,7 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Project1.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  imgui-SFML.cpp
   BouncingParticle.cpp
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(488,21): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(573,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
+C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(416,17): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(479,19): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(400,9): warning C4101: 'byteCount': unreferenced local variable
+C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\Project1\BouncingParticle.cpp(399,10): warning C4101: 'buffer': unreferenced local variable
   Project1.vcxproj -> C:\Users\lizet\source\repos\ParticleSimulator-CPP_DIST_PART_BRANCH\Problem-Set3\Problem-Set3\x64\Debug\Server.exe

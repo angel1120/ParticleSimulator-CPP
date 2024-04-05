@@ -357,6 +357,8 @@ void receivePackets(SOCKET clientSocket) {
         else {
             // Handle error or connection closed
             // You may want to break out of the loop or handle the error in some other way
+            std::cout << "Connection closed or error occurred." << std::endl;
+            receivedBallPosition = sf::Vector2f(-1000, -1000);
             break;
         }
     }
@@ -391,6 +393,210 @@ void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, 
     //        std::cout << "Acknowledgment: Particles sent successfully!" << std::endl;
     //    }
     }
+}
+
+void clientHandler(SOCKET clientSocket, sf::RenderWindow& window) {
+    char buffer[200];
+    int byteCount;
+
+    sf::Clock clock;
+    sf::Clock deltaClock;
+    sf::Clock fpsClock;
+    int frameCount = 0;
+    float fps = 0;
+    auto lastFpsTime = std::chrono::steady_clock::now();
+
+    std::vector<Particle> particles;
+    float canvasWidth = 1280.0f;
+    float canvasHeight = 720.0f;
+    float speed = 100.0f;
+    float startAngle = 0.0f;
+    float endAngle = 180.0f;
+
+    float angle = 45.0f * M_PI / 180.0f; // Convert angle to radians
+    int numParticles = 1;
+    std::vector<sf::VertexArray> walls;
+
+    bool isDrawingLine = false;
+    sf::Vector2f lineStart(100.0f, 360.0f); // Default line start point
+    sf::Vector2f lineEnd(1180.0f, 360.0f);  // Default line end point
+
+    sf::CircleShape ball(RADIUS);
+    bool developerMode = true; // Default to developer mode
+    ball.setFillColor(sf::Color::Red);
+    ball.setPosition(640, 360); // Initial position
+
+    std::thread receiveThread(receivePackets, clientSocket);
+
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    ThreadPool threadPool(numThreads);
+
+    // Mutex for synchronization
+    std::mutex mutex;
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            ImGui::SFML::ProcessEvent(event);
+
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && developerMode) {
+                if (!ImGui::GetIO().WantCaptureMouse) {
+                    if (!isDrawingLine) {
+                        isDrawingLine = true;
+                        lineStart = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
+                    }
+                    else {
+                        isDrawingLine = false;
+                        lineEnd = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
+                        walls.emplace_back(sf::LinesStrip, 2);
+                        walls.back()[0].position = lineStart;
+                        walls.back()[1].position = lineEnd;
+                    }
+                }
+            }
+        }
+        float deltaTime = clock.restart().asSeconds();
+        ImGui::SFML::Update(window, deltaClock.restart());
+
+
+        window.clear(sf::Color::Black);
+
+        ball.setPosition(receivedBallPosition);
+
+        window.setView(window.getDefaultView());
+
+        // Developer mode UI
+        ImGui::Begin("Developer Mode");
+        ImGui::Separator();
+
+        auto currentTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
+        if (elapsedTime >= 0.5) {
+            double valid_fps = frameCount / elapsedTime;
+            fps = valid_fps;
+            frameCount = 0;
+            lastFpsTime = currentTime;
+        }
+        ImGui::Text("FPS: %.1f", fps);
+
+        ImGui::Separator();
+
+        ImGui::End();
+
+        ImGui::Begin("Particle Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+        ImGui::Separator();
+
+        if (ImGui::BeginTabBar("Settings Tabs")) {
+            if (ImGui::BeginTabItem("Line Setting")) {
+                ImGui::SliderFloat("Line Start X", &lineStart.x, 0.0f, canvasWidth);
+                ImGui::SliderFloat("Line Start Y", &lineStart.y, 0.0f, canvasHeight);
+                ImGui::SliderFloat("Line End X", &lineEnd.x, 0.0f, canvasWidth);
+                ImGui::SliderFloat("Line End Y", &lineEnd.y, 0.0f, canvasHeight);
+                ImGui::SliderFloat("Velocity", &speed, 50.0f, 500.0f);
+                ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
+                ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
+                if (ImGui::Button("Generate Particles")) {
+                    particles.clear();
+                    for (int i = 0; i < numParticles; ++i) {
+                        float t = 0.0f;
+                        if (numParticles > 1) {
+                            t = static_cast<float>(i) / (numParticles - 1);
+                        }
+                        sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
+                        particles.emplace_back(position.x, position.y, speed, angle);
+
+                        // send the particles to the client
+                        sendParticles(clientSocket, particles, speed, angle);
+                    }
+                }
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Angle Setting")) {
+                ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
+                ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
+                ImGui::SliderAngle("Start Angle", &startAngle);
+                ImGui::SliderAngle("End Angle", &endAngle);
+                ImGui::SliderFloat("Velocity", &speed, 50.0f, 500.0f);
+                ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
+                if (ImGui::Button("Generate Particles")) {
+                    particles.clear();
+                    float angleIncrement = 0.0f;
+                    if (numParticles > 1) {
+                        angleIncrement = (endAngle - startAngle) / (numParticles - 1);
+                    }
+                    for (int i = 0; i < numParticles; ++i) {
+                        float currentAngle = startAngle + i * angleIncrement;
+                        sf::Vector2f position = lineStart;
+                        particles.emplace_back(position.x, position.y, speed, currentAngle);
+
+                        // send the particles to the client
+                        sendParticles(clientSocket, particles, speed, currentAngle);
+                    }
+                }
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Speed Setting")) {
+                ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
+                ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
+                ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
+                ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
+                if (ImGui::Button("Generate Particles")) {
+                    particles.clear();
+                    float speedIncrement = 450.0f / numParticles;
+                    for (int i = 0; i < numParticles; ++i) {
+                        float currentSpeed = 50.0f + i * speedIncrement;
+                        sf::Vector2f position = lineStart;
+                        particles.emplace_back(position.x, position.y, currentSpeed, angle);
+
+                        // send the particles to the client
+                        sendParticles(clientSocket, particles, currentSpeed, angle);
+                    }
+                }
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
+        if (ImGui::Button("Clear Particles")) {
+            particles.clear();
+        }
+        if (ImGui::Button("Clear Walls")) {
+            walls.clear();
+        }
+        if (ImGui::Button("Clear last wall")) {
+            if (walls.size() > 0) {
+                walls.pop_back();
+            }
+        }
+
+        ImGui::End();
+
+        threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
+            for (auto& particle : particles) {
+                particle.update(deltaTime, canvasWidth, canvasHeight, walls);
+            }
+            });
+
+        // Render walls and particles
+        renderWalls(window, walls, mutex, 1.0f);
+        renderParticles(particles, window, mutex, 1.0f);
+
+        // Draw ball
+        window.draw(ball);
+
+        ImGui::SFML::Render(window);
+
+        window.display();
+
+        frameCount++;
+    }
+    ImGui::SFML::Shutdown();
 }
 
 
@@ -443,323 +649,32 @@ int main() {
     }
     else {
         std::cout << "listen() is online, waiting for new connections..." << std::endl;
+    
     }
+
+    // Create Dev Window
+    sf::RenderWindow window(sf::VideoMode(1280 + 10, 720 + 10), "Particle Bouncing Application"); // adjusting size for aesthetic purposes, canvas walls are still 1280 x 720
+    window.setFramerateLimit(60);
+
+    ImGui::SFML::Init(window);
+
 
     // Accept incoming connections and handle clients concurrently
-    SOCKET clientSocket = accept(serverSocket, NULL, NULL);
-//    while (true) {
-        
-    if (clientSocket == INVALID_SOCKET) {
-        std::cout << "accept failed: " << WSAGetLastError() << std::endl;
-        closesocket(serverSocket);
-        WSACleanup();
-        return -1;
-    }
-    else {
-        std::cout << "accept() is on" << std::endl;
-    }
-
-        // add a ball when it is connected, use the default first 
-
-//    }
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        sf::RenderWindow window(sf::VideoMode(1280 + 10, 720 + 10), "Particle Bouncing Application"); // adjusting size for aesthetic purposes, canvas walls are still 1280 x 720
-        window.setFramerateLimit(60);
-
-        sf::Clock clock;
-        sf::Clock deltaClock;
-        sf::Clock fpsClock;
-        int frameCount = 0;
-        float fps = 0;
-        auto lastFpsTime = std::chrono::steady_clock::now();
-
-        ImGui::SFML::Init(window);
-
-        std::vector<Particle> particles;
-        float canvasWidth = 1280.0f;
-        float canvasHeight = 720.0f;
-        float speed = 100.0f;
-        float startAngle = 0.0f;
-        float endAngle = 180.0f;
-
-        float angle = 45.0f * M_PI / 180.0f; // Convert angle to radians
-        int numParticles = 1;
-        std::vector<sf::VertexArray> walls;
-
-        bool isDrawingLine = false;
-        sf::Vector2f lineStart(100.0f, 360.0f); // Default line start point
-        sf::Vector2f lineEnd(1180.0f, 360.0f);  // Default line end point
-
-        sf::Vector2f spawnPoint(640.0f, 360.0f); // Default spawn point
-
-        sf::CircleShape ball(RADIUS);
-        bool developerMode = true; // Default to developer mode
-        ball.setFillColor(sf::Color::Red);
-        ball.setPosition(640, 360); // Initial position
-
-        /*   std::thread inputThread(&handleInput,
-               std::ref(ball),
-               canvasWidth,
-               canvasHeight,
-               std::ref(walls),
-               std::ref(developerMode)); */
-        std::thread receiveThread(receivePackets, clientSocket);
-
-
-        unsigned int numThreads = std::thread::hardware_concurrency();
-        ThreadPool threadPool(numThreads);
-
-        // Mutex for synchronization
-        std::mutex mutex;
-
-        while (window.isOpen()) {
-            sf::Event event;
-            while (window.pollEvent(event)) {
-                ImGui::SFML::ProcessEvent(event);
-
-                if (event.type == sf::Event::Closed) {
-                    window.close();
-                }
-                else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && developerMode) {
-                    if (!ImGui::GetIO().WantCaptureMouse) {
-                        if (!isDrawingLine) {
-                            isDrawingLine = true;
-                            lineStart = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
-                        }
-                        else {
-                            isDrawingLine = false;
-                            lineEnd = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
-                            walls.emplace_back(sf::LinesStrip, 2);
-                            walls.back()[0].position = lineStart;
-                            walls.back()[1].position = lineEnd;
-                        }
-                    }
-                }
-            }
-            float deltaTime = clock.restart().asSeconds();
-            ImGui::SFML::Update(window, deltaClock.restart());
-
-
-            window.clear(sf::Color::Black);
-
-
-            // Receive ball position from the client socket
-        /*    sf::Vector2f receivedBallPosition;
-            if (recv(clientSocket, reinterpret_cast<char*>(&receivedBallPosition), sizeof(receivedBallPosition), 0) != SOCKET_ERROR) {
-                // Update ball's position using the received position
-            //    ball.setPosition(receivedBallPosition);
-            } */
-           
-            ball.setPosition(receivedBallPosition);
-            // Main thread code here...
-
-            // Wait for the receive thread to finish
-        //    receiveThread.join();
-
-            //        if (developerMode) {
-            window.setView(window.getDefaultView());
-
-            // Developer mode UI
-            ImGui::Begin("Developer Mode");
-            ImGui::Separator();
-
-            auto currentTime = std::chrono::steady_clock::now();
-            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
-            if (elapsedTime >= 0.5) {
-                double valid_fps = frameCount / elapsedTime;
-                fps = valid_fps;
-                frameCount = 0;
-                lastFpsTime = currentTime;
-            }
-            ImGui::Text("FPS: %.1f", fps);
-
-            ImGui::Separator();
-            /*    if (ImGui::Checkbox("Explorer Mode", &developerMode)) {
-                    // std::cout << developerMode << std::endl;
-                } */
-
-            ImGui::End();
-
-            ImGui::Begin("Particle Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-            ImGui::Separator();
-
-            if (ImGui::BeginTabBar("Settings Tabs")) {
-                if (ImGui::BeginTabItem("Line Setting")) {
-                    ImGui::SliderFloat("Line Start X", &lineStart.x, 0.0f, canvasWidth);
-                    ImGui::SliderFloat("Line Start Y", &lineStart.y, 0.0f, canvasHeight);
-                    ImGui::SliderFloat("Line End X", &lineEnd.x, 0.0f, canvasWidth);
-                    ImGui::SliderFloat("Line End Y", &lineEnd.y, 0.0f, canvasHeight);
-                    ImGui::SliderFloat("Velocity", &speed, 50.0f, 500.0f);
-                    ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
-                    ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
-                    if (ImGui::Button("Generate Particles")) {
-                        particles.clear();
-                        for (int i = 0; i < numParticles; ++i) {
-                            float t = 0.0f;
-                            if (numParticles > 1) {
-                                t = static_cast<float>(i) / (numParticles - 1);
-                            }
-                            sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
-                            particles.emplace_back(position.x, position.y, speed, angle);
-
-                            // send the particles to the client
-                            sendParticles(clientSocket, particles, speed, angle);
-
-                        }
-                    }
-                    ImGui::EndTabItem();
-                }
-
-                if (ImGui::BeginTabItem("Angle Setting")) {
-                    ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
-                    ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
-                    ImGui::SliderAngle("Start Angle", &startAngle);
-                    ImGui::SliderAngle("End Angle", &endAngle);
-                    ImGui::SliderFloat("Velocity", &speed, 50.0f, 500.0f);
-                    ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
-                    if (ImGui::Button("Generate Particles")) {
-                        particles.clear();
-                        float angleIncrement = 0.0f;
-                        if (numParticles > 1) {
-                            angleIncrement = (endAngle - startAngle) / (numParticles - 1);
-                        }
-                        for (int i = 0; i < numParticles; ++i) {
-                            float currentAngle = startAngle + i * angleIncrement;
-                            sf::Vector2f position = lineStart;
-                            particles.emplace_back(position.x, position.y, speed, currentAngle);
-
-                            // send the particles to the client
-                            sendParticles(clientSocket, particles, speed, currentAngle);
-
-                        }
-                    }
-                    ImGui::EndTabItem();
-                }
-
-                if (ImGui::BeginTabItem("Speed Setting")) {
-                    ImGui::SliderFloat("Spawn Point X", &lineStart.x, 0.0f, canvasWidth);
-                    ImGui::SliderFloat("Spawn Point Y", &lineStart.y, 0.0f, canvasHeight);
-                    ImGui::SliderFloat("Angle (degrees)", &angle, 0.0f, 360.0f);
-                    ImGui::SliderInt("Number of Particles", &numParticles, 1, 10000);
-                    if (ImGui::Button("Generate Particles")) {
-                        particles.clear();
-                        float speedIncrement = 450.0f / numParticles;
-                        for (int i = 0; i < numParticles; ++i) {
-                            float currentSpeed = 50.0f + i * speedIncrement;
-                            sf::Vector2f position = lineStart;
-                            particles.emplace_back(position.x, position.y, currentSpeed, angle);
-
-                            // send the particles to the client
-                            sendParticles(clientSocket, particles, currentSpeed, angle);
-
-                        }
-                    }
-                    ImGui::EndTabItem();
-                }
-
-                ImGui::EndTabBar();
-            }
-            if (ImGui::Button("Clear Particles")) {
-                particles.clear();
-            }
-            if (ImGui::Button("Clear Walls")) {
-                walls.clear();
-            }
-            if (ImGui::Button("Clear last wall")) {
-                if (walls.size() > 0) {
-                    walls.pop_back();
-                }
-            }
-
-
-            ImGui::End();
-
-            threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
-                for (auto& particle : particles) {
-                    particle.update(deltaTime, canvasWidth, canvasHeight, walls);
-                }
-                });
-
-            renderWalls(window, walls, mutex, 1.0f);
-            renderParticles(particles, window, mutex, 1.0f);
-
-
-            // get updated postion of the ball
-           
-            
-            window.draw(ball);
-                    //    }
-                     /*   else {
-                            // Explorer mode UI
-                            ImGui::Begin("Explorer Mode");
-                            ImGui::Separator();
-
-                            auto currentTime = std::chrono::steady_clock::now();
-                            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFpsTime).count() / 1000.0;
-                            if (elapsedTime >= 0.5) {
-                                double valid_fps = frameCount / elapsedTime;
-                                fps = valid_fps;
-                                frameCount = 0;
-                                lastFpsTime = currentTime;
-                            }
-                            ImGui::Text("FPS: %.1f", fps);
-
-                            if (ImGui::Checkbox("Developer Mode", &developerMode)) {
-                                //std::cout << developerMode << std::endl;
-                                if (developerMode) {
-                                    window.setView(window.getDefaultView());
-                                }
-                            }
-
-
-                            ImGui::End();
-
-                            threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
-                                for (auto& particle : particles) {
-                                    particle.update(deltaTime, canvasWidth, canvasHeight, walls);
-                                }
-                                });
-
-                            float scale = 5.0f;
-                            float zoomedInLeft = ball.getPosition().x - 16 * scale;
-                            float zoomedInRight = ball.getPosition().x + 16 * scale;
-                            float zoomedInTop = ball.getPosition().y - 9 * scale;
-                            float zoomedInBottom = ball.getPosition().y + 9 * scale;
-
-
-
-                            sf::View zoomedInView(sf::FloatRect(zoomedInLeft,
-                                zoomedInTop,
-                                zoomedInRight - zoomedInLeft,
-                                zoomedInBottom - zoomedInTop));
-                            window.setView(zoomedInView);
-
-                            renderWalls(window, walls, mutex, 1.0f);
-                            renderParticles(particles, window, mutex, 1.0f);
-
-                            window.draw(ball);
-                        } */
-
-
-
-            ImGui::SFML::Render(window);
-
-            window.display();
-
-            frameCount++;
+    while (true) {
+        SOCKET clientSocket = accept(serverSocket, NULL, NULL);
+        if (clientSocket == INVALID_SOCKET) {
+            std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+            closesocket(serverSocket);
+            WSACleanup();
+            return -1;
+        }
+        else {
+            std::cout << "accept() is on" << std::endl;
         }
 
+        std::thread(clientHandler, clientSocket, std::ref(window)).detach();
+    }
 
-        ImGui::SFML::Shutdown();
-
-        receiveThread.join();
-        //    inputThread.join();
-
-            // Cleanup and close 
 
         closesocket(serverSocket);
         WSACleanup();
