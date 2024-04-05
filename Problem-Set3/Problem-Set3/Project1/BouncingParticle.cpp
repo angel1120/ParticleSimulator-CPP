@@ -31,11 +31,10 @@
 #include <string> // for std::string
 #include <sstream> // for std::stringstream
 
-void clientHandler(SOCKET clientSocket, sf::RenderWindow& window);
 bool devWindowCreated = false;
 sf::RenderWindow window;
 
-std::atomic<sf::Vector2f> receivedBallPosition;
+//std::atomic<sf::Vector2f> receivedBallPosition;
 
 template<typename T>
 const T& clamp(const T& value, const T& min, const T& max) {
@@ -347,7 +346,7 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
 
 // Function to receive packets from the client socket
-void receivePackets(SOCKET clientSocket) {
+sf::Vector2f receivePackets(SOCKET clientSocket) {
     sf::Vector2f receivedPosition;
     while (true) {
         // Receive ball position from the client socket
@@ -355,12 +354,11 @@ void receivePackets(SOCKET clientSocket) {
             // Print the received position
             std::cout << "Received ball position: (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
             // Update the global variable with the received position
-            receivedBallPosition.store(receivedPosition, std::memory_order_relaxed);
+            return receivedPosition;
         }
         else {
             std::cout << "Connection closed or error occurred." << std::endl;
-            receivedBallPosition = sf::Vector2f(-1000, -1000);
-            break;
+            return sf::Vector2f(-1000, -1000);
         }
     }
 }
@@ -392,7 +390,7 @@ void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, 
     }
 }
 
-void clientHandler(SOCKET clientSocket, sf::RenderWindow& window) {
+void clientHandler(SOCKET clientSocket) {
     char buffer[200];
     int byteCount;
 
@@ -423,7 +421,16 @@ void clientHandler(SOCKET clientSocket, sf::RenderWindow& window) {
     ball.setFillColor(sf::Color::Red);
     ball.setPosition(640, 360); // Initial position
 
-    std::thread receiveThread(receivePackets, clientSocket);
+    //std::thread receiveThread(receivePackets, clientSocket);
+
+    std::thread receiveThread;
+    sf::Vector2f receivedPosition = sf::Vector2f(-1000, -1000);
+
+    receiveThread = std::thread([&clientSocket, &receivedPosition]() {
+        while (true) {
+            receivedPosition = receivePackets(clientSocket);
+        }
+        });
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     ThreadPool threadPool(numThreads);
@@ -461,7 +468,7 @@ void clientHandler(SOCKET clientSocket, sf::RenderWindow& window) {
 
         window.clear(sf::Color::Black);
 
-        ball.setPosition(receivedBallPosition);
+        ball.setPosition(receivedPosition);
 
         window.setView(window.getDefaultView());
 
@@ -611,7 +618,7 @@ void createWindow(SOCKET clientsocket) {
         initializeWindow();
         devWindowCreated = true;
     }
-    clientHandler(clientsocket, window);
+    clientHandler(clientsocket);
 }
 
 
@@ -682,7 +689,6 @@ int main() {
 
         std::thread(createWindow, clientSocket).detach();
     }
-
 
         closesocket(serverSocket);
         WSACleanup();
