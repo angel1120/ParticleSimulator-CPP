@@ -31,6 +31,9 @@
 #include <string> // for std::string
 #include <sstream> // for std::stringstream
 
+void clientHandler(SOCKET clientSocket, sf::RenderWindow& window);
+bool devWindowCreated = false;
+sf::RenderWindow window;
 
 std::atomic<sf::Vector2f> receivedBallPosition;
 
@@ -593,6 +596,24 @@ void clientHandler(SOCKET clientSocket, sf::RenderWindow& window) {
     ImGui::SFML::Shutdown();
 }
 
+void initializeWindow() {
+    // Create Dev Window
+    window.create(sf::VideoMode(1280 + 10, 720 + 10), "Particle Bouncing Application");
+    window.setFramerateLimit(60);
+
+    ImGui::SFML::Init(window);
+}
+
+void createWindow(SOCKET clientsocket) {
+    // Create Dev Window
+
+    if (!devWindowCreated) {
+        initializeWindow();
+        devWindowCreated = true;
+    }
+    clientHandler(clientsocket, window);
+}
+
 
 int main() {
 
@@ -646,13 +667,6 @@ int main() {
     
     }
 
-    // Create Dev Window
-    sf::RenderWindow window(sf::VideoMode(1280 + 10, 720 + 10), "Particle Bouncing Application"); // adjusting size for aesthetic purposes, canvas walls are still 1280 x 720
-    window.setFramerateLimit(60);
-
-    ImGui::SFML::Init(window);
-
-
     // Accept incoming connections and handle clients concurrently
     while (true) {
         SOCKET clientSocket = accept(serverSocket, NULL, NULL);
@@ -666,7 +680,7 @@ int main() {
             std::cout << "accept() is on" << std::endl;
         }
 
-        std::thread(clientHandler, clientSocket, std::ref(window)).detach();
+        std::thread(createWindow, clientSocket).detach();
     }
 
 
