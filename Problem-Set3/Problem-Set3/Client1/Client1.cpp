@@ -305,164 +305,166 @@ bool collidesWithWalls(const sf::Vector2f& position, const std::vector<sf::Verte
     return false; // No collision detected
 }
 
-void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls, SOCKET clientSocket) {
+void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls, SOCKET clientSocket, sf::RenderWindow& window) {
     const float speed = 5.0f;
 
-//    sf::Vector2f ballPosition = ball.getPosition();
-//    sf::Packet packet;
-   
+    //    sf::Vector2f ballPosition = ball.getPosition();
+    //    sf::Packet packet;
 
-    
-    //    std::cout << developerMode << std::endl;
+
+
+        //    std::cout << developerMode << std::endl;
     while (true) {
-        //    if (!developerMode) {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && ball.getPosition().y >= 0) {
-            sf::Vector2f nextPosition = ball.getPosition();
+        if (window.hasFocus()) {
+            //    if (!developerMode) {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && ball.getPosition().y >= 0) {
+                sf::Vector2f nextPosition = ball.getPosition();
 
-            nextPosition.y -= speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(0, -speed);
-            }
-
-            sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
-
-            std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
-
-            sf::Packet packet;
-            packet << ballPosition.x << nextPosition.y;
-
-            // Send the packet to the server (non-blocking)
-            const char* data = static_cast<const char*>(packet.getData());
-            std::size_t dataSize = packet.getDataSize();
-
-            int bytesSent = send(clientSocket, data, dataSize, 0);
-            if (bytesSent == SOCKET_ERROR) {
-                if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                    std::cerr << "Failed to send position data to the server!" << std::endl;
+                nextPosition.y -= speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(0, -speed);
                 }
-            }
-            else {
-                std::cout << "Position data sent to server." << std::endl;
-            }
 
-            // Wait for key release before checking for key press again
-//            while (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {}
+                sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
 
+                std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
 
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) && ball.getPosition().x >= 0) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.x -= speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(-speed, 0);
-            }
+                sf::Packet packet;
+                packet << ballPosition.x << nextPosition.y;
 
-            sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+                // Send the packet to the server (non-blocking)
+                const char* data = static_cast<const char*>(packet.getData());
+                std::size_t dataSize = packet.getDataSize();
 
-            std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
-
-            sf::Packet packet;
-            packet << nextPosition.x << ballPosition.y;
-
-            // Send the packet to the server (non-blocking)
-            const char* data = static_cast<const char*>(packet.getData());
-            std::size_t dataSize = packet.getDataSize();
-
-            int bytesSent = send(clientSocket, data, dataSize, 0);
-            if (bytesSent == SOCKET_ERROR) {
-                if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                    std::cerr << "Failed to send position data to the server!" << std::endl;
+                int bytesSent = send(clientSocket, data, dataSize, 0);
+                if (bytesSent == SOCKET_ERROR) {
+                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                        std::cerr << "Failed to send position data to the server!" << std::endl;
+                    }
                 }
-            }
-            else {
-                std::cout << "Position data sent to server." << std::endl;
-            }
-
-//            while (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {}
-
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && ball.getPosition().y + ball.getRadius() + RADIUS < canvasHeight) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.y += speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(0, speed);
-            }
-
-            sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
-
-            std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
-
-            sf::Packet packet;
-            packet << ballPosition.x << nextPosition.y;
-
-            // Send the packet to the server (non-blocking)
-            const char* data = static_cast<const char*>(packet.getData());
-            std::size_t dataSize = packet.getDataSize();
-
-            int bytesSent = send(clientSocket, data, dataSize, 0);
-            if (bytesSent == SOCKET_ERROR) {
-                if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                    std::cerr << "Failed to send position data to the server!" << std::endl;
+                else {
+                    std::cout << "Position data sent to server." << std::endl;
                 }
+
+                // Wait for key release before checking for key press again
+    //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {}
+
+
             }
-            else {
-                std::cout << "Position data sent to server." << std::endl;
-            }
-
- //           while (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {}
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) &&
-            ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
-            sf::Vector2f nextPosition = ball.getPosition();
-            nextPosition.x += speed;
-            if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
-                ball.move(speed, 0);
-            }
-
-            sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
-
-            std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
-
-            sf::Packet packet;
-            packet << nextPosition.x << ballPosition.y;
-
-            // Send the packet to the server (non-blocking)
-            const char* data = static_cast<const char*>(packet.getData());
-            std::size_t dataSize = packet.getDataSize();
-
-            int bytesSent = send(clientSocket, data, dataSize, 0);
-            if (bytesSent == SOCKET_ERROR) {
-                if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                    std::cerr << "Failed to send position data to the server!" << std::endl;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) && ball.getPosition().x >= 0) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.x -= speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(-speed, 0);
                 }
+
+                sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+
+                std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+
+                sf::Packet packet;
+                packet << nextPosition.x << ballPosition.y;
+
+                // Send the packet to the server (non-blocking)
+                const char* data = static_cast<const char*>(packet.getData());
+                std::size_t dataSize = packet.getDataSize();
+
+                int bytesSent = send(clientSocket, data, dataSize, 0);
+                if (bytesSent == SOCKET_ERROR) {
+                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                        std::cerr << "Failed to send position data to the server!" << std::endl;
+                    }
+                }
+                else {
+                    std::cout << "Position data sent to server." << std::endl;
+                }
+
+                //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {}
+
             }
-            else {
-                std::cout << "Position data sent to server." << std::endl;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && ball.getPosition().y + ball.getRadius() + RADIUS < canvasHeight) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.y += speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(0, speed);
+                }
+
+                sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+
+                std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
+
+                sf::Packet packet;
+                packet << ballPosition.x << nextPosition.y;
+
+                // Send the packet to the server (non-blocking)
+                const char* data = static_cast<const char*>(packet.getData());
+                std::size_t dataSize = packet.getDataSize();
+
+                int bytesSent = send(clientSocket, data, dataSize, 0);
+                if (bytesSent == SOCKET_ERROR) {
+                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                        std::cerr << "Failed to send position data to the server!" << std::endl;
+                    }
+                }
+                else {
+                    std::cout << "Position data sent to server." << std::endl;
+                }
+
+                //           while (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {}
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) &&
+                ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
+                sf::Vector2f nextPosition = ball.getPosition();
+                nextPosition.x += speed;
+                if (!collidesWithWalls(nextPosition, walls, canvasWidth, canvasHeight)) {
+                    ball.move(speed, 0);
+                }
+
+                sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+
+                std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+
+                sf::Packet packet;
+                packet << nextPosition.x << ballPosition.y;
+
+                // Send the packet to the server (non-blocking)
+                const char* data = static_cast<const char*>(packet.getData());
+                std::size_t dataSize = packet.getDataSize();
+
+                int bytesSent = send(clientSocket, data, dataSize, 0);
+                if (bytesSent == SOCKET_ERROR) {
+                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                        std::cerr << "Failed to send position data to the server!" << std::endl;
+                    }
+                }
+                else {
+                    std::cout << "Position data sent to server." << std::endl;
+                }
+
+                //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {}
             }
 
-//            while (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {}
+            /*    // Create a packet to send ball position
+                sf::Vector2f ballPosition = ball.getPosition();
+                sf::Packet packet;
+                packet << ballPosition.x << ballPosition.y;
+
+                // Send the packet to the server (non-blocking)
+                const char* data = static_cast<const char*>(packet.getData());
+                std::size_t dataSize = packet.getDataSize();
+
+                int bytesSent = send(clientSocket, data, dataSize, 0);
+                if (bytesSent == SOCKET_ERROR) {
+                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                        std::cerr << "Failed to send position data to the server!" << std::endl;
+                    }
+                }
+                else {
+                    std::cout << "Position data sent to server." << std::endl;
+                } */
+
+
         }
-
-    /*    // Create a packet to send ball position
-        sf::Vector2f ballPosition = ball.getPosition();
-        sf::Packet packet;
-        packet << ballPosition.x << ballPosition.y;
-
-        // Send the packet to the server (non-blocking)
-        const char* data = static_cast<const char*>(packet.getData());
-        std::size_t dataSize = packet.getDataSize();
-
-        int bytesSent = send(clientSocket, data, dataSize, 0);
-        if (bytesSent == SOCKET_ERROR) {
-            if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                std::cerr << "Failed to send position data to the server!" << std::endl;
-            }
-        }
-        else {
-            std::cout << "Position data sent to server." << std::endl;
-        } */
-
-
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -491,17 +493,17 @@ void receiveDataFromServer(SOCKET clientSocket, std::vector<Particle>& particles
             break;
         }
 
-    //    std::lock_guard<std::mutex> lock(mutex);
+        //    std::lock_guard<std::mutex> lock(mutex);
 
-        // Update the received data
-    //    speed = receivedSpeed;
-    //    angle = receivedAngle;
+            // Update the received data
+        //    speed = receivedSpeed;
+        //    angle = receivedAngle;
 
-        // Handle received data here
-        // For example, you can add the received particle to the particles vector
+            // Handle received data here
+            // For example, you can add the received particle to the particles vector
         particles.emplace_back(position.x, position.y, receivedSpeed, receivedAngle);
     }
-} 
+}
 
 
 
@@ -537,7 +539,7 @@ int main() {
     // Connect to server
     sockaddr_in service;
     service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("192.168.254.186"); // Change to server IP address
+    service.sin_addr.s_addr = inet_addr("192.168.1.7"); // Change to server IP address
     service.sin_port = htons(55555); // Change to server port
     if (connect(clientSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
         std::cout << "Failed to connect." << std::endl;
@@ -589,7 +591,7 @@ int main() {
         std::ref(ball),
         canvasWidth,
         canvasHeight,
-        std::ref(walls), clientSocket);
+        std::ref(walls), clientSocket, std::ref(window));
 
     // Create a packet to send ball position
     sf::Vector2f ballPosition = ball.getPosition();
@@ -619,9 +621,9 @@ int main() {
     std::mutex mutex;
 
     std::thread receiveThread(receiveDataFromServer, clientSocket, std::ref(particles));
- //   std::thread receiveThread(receiveParticles, std::ref(particles), clientSocket, std::ref(mutex));
+    //   std::thread receiveThread(receiveParticles, std::ref(particles), clientSocket, std::ref(mutex));
 
-    
+
 
     while (window.isOpen()) {
         sf::Event event;
@@ -653,7 +655,7 @@ int main() {
 
         window.clear(sf::Color::Black);
 
-      
+
 
 
         /*    if (developerMode) {
