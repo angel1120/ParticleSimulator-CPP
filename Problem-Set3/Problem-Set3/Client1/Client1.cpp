@@ -335,41 +335,24 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
     }
 }
 
-void receiveDataFromServer(SOCKET clientSocket, const std::string& clientId, std::vector<Particle>& particles) {
+// Function to receive data from the server
+void receiveDataFromServer(SOCKET clientSocket, std::vector<Particle>& particles, std::mutex& mutex) {
     while (true) {
-        std::string receivedClientId;
-        sf::Vector2f position;
-        float receivedSpeed;
-        float receivedAngle;
-
-        // Receive client ID
-        char clientIdBuffer[256];
-        if (recv(clientSocket, clientIdBuffer, 256, 0) == SOCKET_ERROR) {
-            std::cerr << "Error receiving client ID." << std::endl;
-            return;
-        }
-
         // Receive particle position
+        sf::Vector2f position;
         if (recv(clientSocket, reinterpret_cast<char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
             std::cerr << "Error receiving particle position." << std::endl;
             break;
         }
-        /*
-        // Receive particle speed
-        if (recv(clientSocket, reinterpret_cast<char*>(&receivedSpeed), sizeof(receivedSpeed), 0) == SOCKET_ERROR) {
-            std::cerr << "Error receiving particle speed." << std::endl;
-            break;
-        }
 
-        // Receive particle angle
-        if (recv(clientSocket, reinterpret_cast<char*>(&receivedAngle), sizeof(receivedAngle), 0) == SOCKET_ERROR) {
-            std::cerr << "Error receiving particle angle." << std::endl;
-            break;
-        }
-        */
+        // Lock the mutex before accessing the particles vector
+        std::lock_guard<std::mutex> lock(mutex);
+
+        // Create a new particle with the received position and add it to the vector
         particles.emplace_back(position.x, position.y);
     }
 }
+
 
 class IDGenerator {
 private:
@@ -510,8 +493,7 @@ int main() {
     // Mutex for synchronization
     std::mutex mutex;
 
-    std::thread receiveThread(receiveDataFromServer, clientSocket, id, std::ref(particles));
-    //   std::thread receiveThread(receiveParticles, std::ref(particles), clientSocket, std::ref(mutex));
+    std::thread receiveThread(receiveDataFromServer, clientSocket, std::ref(particles), std::ref(mutex));
 
     while (window.isOpen()) {
         sf::Event event;

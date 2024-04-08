@@ -446,40 +446,27 @@ std::string receiveSerializedData(SOCKET clientSocket) {
     return receivedData;
 }
 
-void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector<Particle>& particles 
-                    //float speed, float angle
-                    ) {
-    // Serialize and send each particle's position
-    std::cout << "Passed here" << std::endl;
+void sendParticles(SOCKET clientSocket, const std::string& clientId, const std::vector<Particle>& particles) {
+    // Send client ID
+    if (send(clientSocket, clientId.c_str(), clientId.size() + 1, 0) == SOCKET_ERROR) {
+        std::cerr << "Error sending client ID." << std::endl;
+        return;
+    }
+
+    // Serialize particle positions
+    std::vector<sf::Vector2f> positions;
+    positions.reserve(particles.size());
     for (const auto& particle : particles) {
-        // Serialize and send client ID
-        if (send(clientSocket, reinterpret_cast<const char*>(&clientId), sizeof(clientId), 0) == SOCKET_ERROR) {
-            std::cerr << "Error sending client ID." << std::endl;
-            return;
-        }
+        positions.push_back(particle.getPosition());
+    }
 
-        sf::Vector2f position = particle.getPosition();
-        if (send(clientSocket, reinterpret_cast<const char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
-            // Handle error
-            std::cerr << "Error sending particle position." << std::endl;
-            return;
-        }
-
-        /*
-        // Serialize and send speed
-        if (send(clientSocket, reinterpret_cast<const char*>(&speed), sizeof(speed), 0) == SOCKET_ERROR) {
-            std::cerr << "Error sending particle speed." << std::endl;
-            return;
-        }
-
-        // Serialize and send angle
-        if (send(clientSocket, reinterpret_cast<const char*>(&angle), sizeof(angle), 0) == SOCKET_ERROR) {
-            std::cerr << "Error sending particle angle." << std::endl;
-            return;
-        }
-        */
+    // Send particle positions
+    if (send(clientSocket, reinterpret_cast<const char*>(positions.data()), sizeof(sf::Vector2f) * positions.size(), 0) == SOCKET_ERROR) {
+        std::cerr << "Error sending particle positions." << std::endl;
+        return;
     }
 }
+
 
 void clientHandler(SOCKET clientSocket) {
     char buffer[200];
