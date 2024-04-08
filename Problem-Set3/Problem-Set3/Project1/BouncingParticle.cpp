@@ -346,27 +346,87 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
 
 // Function to receive packets from the client socket
-sf::Vector2f receivePackets(SOCKET clientSocket) {
+// sf::Vector2f receivePackets(SOCKET clientSocket) {
+//     sf::Vector2f receivedPosition;
+//     while (true) {
+//         // Receive ball position from the client socket
+//         if (recv(clientSocket, reinterpret_cast<char*>(&receivedPosition), sizeof(receivedPosition), 0) != SOCKET_ERROR) {
+//             // Print the received position
+//             std::cout << "Received ball position: (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
+//             // Update the global variable with the received position
+//             return receivedPosition;
+//         }
+//         else {
+//             std::cout << "Connection closed or error occurred." << std::endl;
+//             return sf::Vector2f(-1000, -1000);
+//         }
+//     }
+// }
+
+// std::tuple<std::string, sf::Vector2f> receivePackets(SOCKET clientSocket) {
+//     std::string clientId;
+//     sf::Vector2f receivedPosition;
+
+//     // Receive data from the client socket
+//     char idBuffer[256];
+//     char buffer[sizeof(idBuffer) + sizeof(sf::Vector2f)];
+
+//     if (recv(clientSocket, buffer, sizeof(buffer), 0) != SOCKET_ERROR) {
+//         // Extract client ID and position from buffer
+//         std::memcpy(idBuffer, buffer, sizeof(idBuffer));
+//         idBuffer[sizeof(idBuffer) - 1] = '\0';
+//         clientId = std::string(idBuffer);
+
+//         std::memcpy(&receivedPosition, buffer + sizeof(int), sizeof(sf::Vector2f));
+
+//         // Print the received data
+//         std::cout << "Received from client: " << clientId << "Ball position (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
+//     }
+//     else {
+//         std::cout << "Connection closed or error occurred." << std::endl;
+//         // Return a default client ID and position in case of error
+//         clientId = "";
+//         receivedPosition = sf::Vector2f(-1000, -1000);
+//     }
+
+//     return std::make_tuple(clientId, receivedPosition);
+// }    
+
+std::tuple<std::string, sf::Vector2f> receivePackets(SOCKET clientSocket, std::string& id) {
     sf::Vector2f receivedPosition;
+    sf::Packet packet;
+
     while (true) {
-        // Receive ball position from the client socket
-        if (recv(clientSocket, reinterpret_cast<char*>(&receivedPosition), sizeof(receivedPosition), 0) != SOCKET_ERROR) {
-            // Print the received position
-            std::cout << "Received ball position: (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
-            // Update the global variable with the received position
-            return receivedPosition;
+        // Receive packet from the client socket
+        char buffer[1024]; // Adjust the buffer size according to your needs
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (bytesReceived == SOCKET_ERROR) {
+            std::cerr << "Failed to receive data from the client!" << std::endl;
+            return std::make_tuple("",sf::Vector2f(-1000, -1000));
         }
-        else {
-            std::cout << "Connection closed or error occurred." << std::endl;
-            return sf::Vector2f(-1000, -1000);
-        }
+
+        // Load the received data into the packet
+        packet.append(buffer, bytesReceived);
+
+        // Extract ID and position from the packet
+        packet >> id >> receivedPosition.x >> receivedPosition.y;
+
+        std::cout << "Received from client: " << id << "Ball position (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
+
+        // Return the received position
+        return std::make_tuple(id, receivedPosition);
     }
 }
 
-
-void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, float speed, float angle) {
+void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector<Particle>& particles, float speed, float angle) {
     // Serialize and send each particle's position
     for (const auto& particle : particles) {
+        // Serialize and send client ID
+        if (send(clientSocket, reinterpret_cast<const char*>(&clientId), sizeof(clientId), 0) == SOCKET_ERROR) {
+            std::cerr << "Error sending client ID." << std::endl;
+            return;
+        }
+
         sf::Vector2f position = particle.getPosition();
         if (send(clientSocket, reinterpret_cast<const char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
             // Handle error
@@ -421,14 +481,27 @@ void clientHandler(SOCKET clientSocket) {
     ball.setFillColor(sf::Color::Red);
     ball.setPosition(640, 360); // Initial position
 
-    //std::thread receiveThread(receivePackets, clientSocket);
-
     std::thread receiveThread;
+    std::tuple<std::string, sf::Vector2f> receivedData = std::make_tuple("", sf::Vector2f(-1000, -1000));
     sf::Vector2f receivedPosition = sf::Vector2f(-1000, -1000);
+    std::string clientId;
 
-    receiveThread = std::thread([&clientSocket, &receivedPosition]() {
+    //std::cout << "Client ID: " << clientId << std::endl;
+
+    //receiveThread = std::thread([&clientSocket, &receivedPosition]() {
+    //    while (true) {
+    //        receivedPosition = receivePackets(clientSocket);
+    //    }
+    //    });
+
+    receiveThread = std::thread([&clientSocket, &receivedData]() {
         while (true) {
-            receivedPosition = receivePackets(clientSocket);
+            std::string temp;
+            // Receive data from the client socket
+            receivedData = receivePackets(clientSocket, temp);
+
+            std::string clientId = std::get<0>(receivedData);
+            sf::Vector2f receivedPosition = std::get<1>(receivedData);
         }
         });
 
@@ -514,7 +587,7 @@ void clientHandler(SOCKET clientSocket) {
                         particles.emplace_back(position.x, position.y, speed, angle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, particles, speed, angle);
+                        sendParticles(clientSocket, clientId, particles, speed, angle);
                     }
                 }
                 ImGui::EndTabItem();
@@ -539,7 +612,7 @@ void clientHandler(SOCKET clientSocket) {
                         particles.emplace_back(position.x, position.y, speed, currentAngle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, particles, speed, currentAngle);
+                        sendParticles(clientSocket, clientId, particles, speed, currentAngle);
                     }
                 }
                 ImGui::EndTabItem();
@@ -559,7 +632,7 @@ void clientHandler(SOCKET clientSocket) {
                         particles.emplace_back(position.x, position.y, currentSpeed, angle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, particles, currentSpeed, angle);
+                        sendParticles(clientSocket, clientId, particles, currentSpeed, angle);
                     }
                 }
                 ImGui::EndTabItem();
@@ -623,6 +696,8 @@ void createWindow(SOCKET clientsocket) {
 
 
 int main() {
+    // Create a container to store client IDs and positions
+    std::unordered_map<std::string, sf::Vector2f> clientPositions;
 
     // server
     // Initialize WSA variables

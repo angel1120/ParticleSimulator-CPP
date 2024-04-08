@@ -294,29 +294,22 @@ bool collidesWithWalls(const sf::Vector2f& position, const std::vector<sf::Verte
 
 
             if (distance(position, closestPoint) < RADIUS) {
-                return true; // Collision detected
+                return true; 
             }
         }
     }
-    // Check if the position is outside the canvas boundaries
     if (position.x < 0 || position.x >= canvasWidth || position.y < 0 || position.y >= canvasHeight) {
-        return true; // Collision detected with canvas boundaries
+        return true;
     }
-    return false; // No collision detected
+    return false; 
 }
 
-void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls, SOCKET clientSocket, sf::RenderWindow& window) {
+void handleInput(const std::string& clientId, sf::CircleShape& ball, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls, SOCKET clientSocket, sf::RenderWindow& window) {
     const float speed = 5.0f;
+    std::cout << "Client ID: " << clientId << std::endl;
 
-    //    sf::Vector2f ballPosition = ball.getPosition();
-    //    sf::Packet packet;
-
-
-
-        //    std::cout << developerMode << std::endl;
     while (true) {
         if (window.hasFocus()) {
-            //    if (!developerMode) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && ball.getPosition().y >= 0) {
                 sf::Vector2f nextPosition = ball.getPosition();
 
@@ -327,12 +320,11 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
 
-                std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
+                std::cout << "Client ID: " << clientId << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
 
                 sf::Packet packet;
-                packet << ballPosition.x << nextPosition.y;
+                packet << clientId << ballPosition.x << nextPosition.y;
 
-                // Send the packet to the server (non-blocking)
                 const char* data = static_cast<const char*>(packet.getData());
                 std::size_t dataSize = packet.getDataSize();
 
@@ -345,9 +337,6 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
                 else {
                     std::cout << "Position data sent to server." << std::endl;
                 }
-
-                // Wait for key release before checking for key press again
-    //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {}
 
 
             }
@@ -360,10 +349,10 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
 
-                std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+                std::cout << "Client ID: " << clientId << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
 
                 sf::Packet packet;
-                packet << nextPosition.x << ballPosition.y;
+                packet << clientId << nextPosition.x << ballPosition.y;
 
                 // Send the packet to the server (non-blocking)
                 const char* data = static_cast<const char*>(packet.getData());
@@ -378,8 +367,6 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
                 else {
                     std::cout << "Position data sent to server." << std::endl;
                 }
-
-                //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {}
 
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && ball.getPosition().y + ball.getRadius() + RADIUS < canvasHeight) {
@@ -391,12 +378,11 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
 
-                std::cout << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
+                std::cout << "Client ID: " << clientId << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
 
                 sf::Packet packet;
-                packet << ballPosition.x << nextPosition.y;
+                packet << clientId << ballPosition.x << nextPosition.y;
 
-                // Send the packet to the server (non-blocking)
                 const char* data = static_cast<const char*>(packet.getData());
                 std::size_t dataSize = packet.getDataSize();
 
@@ -409,8 +395,6 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
                 else {
                     std::cout << "Position data sent to server." << std::endl;
                 }
-
-                //           while (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {}
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) &&
                 ball.getPosition().x + ball.getRadius() + RADIUS < canvasWidth) {
@@ -422,12 +406,11 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
 
-                std::cout << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+                std::cout << "Client ID: " << clientId << " Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
 
                 sf::Packet packet;
-                packet << nextPosition.x << ballPosition.y;
+                packet << clientId << nextPosition.x << ballPosition.y;
 
-                // Send the packet to the server (non-blocking)
                 const char* data = static_cast<const char*>(packet.getData());
                 std::size_t dataSize = packet.getDataSize();
 
@@ -438,42 +421,27 @@ void handleInput(sf::CircleShape& ball, float canvasWidth, float canvasHeight, c
                     }
                 }
                 else {
-                    std::cout << "Position data sent to server." << std::endl;
+                    std::cout << clientId << "Position data sent to server." << std::endl;
                 }
-
-                //            while (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {}
             }
-
-            /*    // Create a packet to send ball position
-                sf::Vector2f ballPosition = ball.getPosition();
-                sf::Packet packet;
-                packet << ballPosition.x << ballPosition.y;
-
-                // Send the packet to the server (non-blocking)
-                const char* data = static_cast<const char*>(packet.getData());
-                std::size_t dataSize = packet.getDataSize();
-
-                int bytesSent = send(clientSocket, data, dataSize, 0);
-                if (bytesSent == SOCKET_ERROR) {
-                    if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                        std::cerr << "Failed to send position data to the server!" << std::endl;
-                    }
-                }
-                else {
-                    std::cout << "Position data sent to server." << std::endl;
-                } */
-
-
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
-void receiveDataFromServer(SOCKET clientSocket, std::vector<Particle>& particles) {
+void receiveDataFromServer(SOCKET clientSocket, const std::string& clientId, std::vector<Particle>& particles) {
     while (true) {
+        std::string receivedClientId;
         sf::Vector2f position;
         float receivedSpeed;
         float receivedAngle;
+
+        // Receive client ID
+        char clientIdBuffer[256];
+        if (recv(clientSocket, clientIdBuffer, 256, 0) == SOCKET_ERROR) {
+            std::cerr << "Error receiving client ID." << std::endl;
+            return;
+        }
 
         // Receive particle position
         if (recv(clientSocket, reinterpret_cast<char*>(&position), sizeof(position), 0) == SOCKET_ERROR) {
@@ -493,23 +461,27 @@ void receiveDataFromServer(SOCKET clientSocket, std::vector<Particle>& particles
             break;
         }
 
-        //    std::lock_guard<std::mutex> lock(mutex);
-
-            // Update the received data
-        //    speed = receivedSpeed;
-        //    angle = receivedAngle;
-
-            // Handle received data here
-            // For example, you can add the received particle to the particles vector
         particles.emplace_back(position.x, position.y, receivedSpeed, receivedAngle);
     }
 }
 
+class IDGenerator {
+private:
+    int counter;
 
+public:
+    IDGenerator() : counter(0) {}
+
+    std::string generateID() {
+        counter++;
+        return "A" + std::to_string(counter);
+    }
+};
 
 
 
 int main() {
+    IDGenerator idGenerator;
 
     // Initialize WSA variables
     WSADATA wsaData;
@@ -551,6 +523,9 @@ int main() {
         std::cout << "Connected to server." << std::endl;
     }
 
+    std::string id = idGenerator.generateID();
+    std::cout << "Generated ID: " << id << std::endl;
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     sf::RenderWindow window(sf::VideoMode(1280 + 10, 720 + 10), "Particle Bouncing Application"); // adjusting size for aesthetic purposes, canvas walls are still 1280 x 720
@@ -588,6 +563,7 @@ int main() {
     ball.setPosition(640, 360); // Initial position
 
     std::thread inputThread(&handleInput,
+        id,
         std::ref(ball),
         canvasWidth,
         canvasHeight,
@@ -596,7 +572,7 @@ int main() {
     // Create a packet to send ball position
     sf::Vector2f ballPosition = ball.getPosition();
     sf::Packet packet;
-    packet << ballPosition.x << ballPosition.y;
+    packet << id << ballPosition.x << ballPosition.y;
 
     // Send the packet to the server (non-blocking)
     const char* data = static_cast<const char*>(packet.getData());
@@ -612,18 +588,14 @@ int main() {
         std::cout << "Position data sent to server." << std::endl;
     }
 
-
-
     unsigned int numThreads = std::thread::hardware_concurrency();
     ThreadPool threadPool(numThreads);
 
     // Mutex for synchronization
     std::mutex mutex;
 
-    std::thread receiveThread(receiveDataFromServer, clientSocket, std::ref(particles));
+    std::thread receiveThread(receiveDataFromServer, clientSocket, id, std::ref(particles));
     //   std::thread receiveThread(receiveParticles, std::ref(particles), clientSocket, std::ref(mutex));
-
-
 
     while (window.isOpen()) {
         sf::Event event;
@@ -655,14 +627,6 @@ int main() {
         }
         ImGui::Text("FPS: %.1f", fps);
 
-        /*    if (ImGui::Checkbox("Developer Mode", &developerMode)) {
-                //std::cout << developerMode << std::endl;
-                if (developerMode) {
-                    window.setView(window.getDefaultView());
-                }
-            } */
-
-
         ImGui::End();
 
         threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
@@ -689,9 +653,6 @@ int main() {
         renderParticles(particles, window, mutex, 1.0f);
 
         window.draw(ball);
-        //        }
-
-
 
         ImGui::SFML::Render(window);
 
@@ -702,7 +663,6 @@ int main() {
 
     ImGui::SFML::Shutdown();
     inputThread.join();
-
 
     // Cleanup and close socket
     closesocket(clientSocket);
