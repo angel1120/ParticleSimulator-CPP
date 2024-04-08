@@ -319,14 +319,21 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                 }
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+                // Create a string to hold the serialized data
+                std::ostringstream oss;
 
-                std::cout << "Client ID: " << clientId << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
+                // Serialize the data into the string
+                oss << clientId << " " << ballPosition.x << " " << ballPosition.y;
 
-                sf::Packet packet;
-                packet << clientId << ballPosition.x << nextPosition.y;
+                // Convert the stringstream to a string
+                std::string serializedData = oss.str();
 
-                const char* data = static_cast<const char*>(packet.getData());
-                std::size_t dataSize = packet.getDataSize();
+                // Print the serialized data
+                std::cout << "Before sending: " << serializedData << std::endl;
+
+                // Send the serialized data to the server (non-blocking)
+                const char* data = serializedData.c_str(); // Get pointer to the data
+                std::size_t dataSize = serializedData.size(); // Get size of the data
 
                 int bytesSent = send(clientSocket, data, dataSize, 0);
                 if (bytesSent == SOCKET_ERROR) {
@@ -348,15 +355,21 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                 }
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+                // Create a string to hold the serialized data
+                std::ostringstream oss;
 
-                std::cout << "Client ID: " << clientId << "Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+                // Serialize the data into the string
+                oss << clientId << " " << ballPosition.x << " " << ballPosition.y;
 
-                sf::Packet packet;
-                packet << clientId << nextPosition.x << ballPosition.y;
+                // Convert the stringstream to a string
+                std::string serializedData = oss.str();
 
-                // Send the packet to the server (non-blocking)
-                const char* data = static_cast<const char*>(packet.getData());
-                std::size_t dataSize = packet.getDataSize();
+                // Print the serialized data
+                std::cout << "Before sending: " << serializedData << std::endl;
+
+                // Send the serialized data to the server (non-blocking)
+                const char* data = serializedData.c_str(); // Get pointer to the data
+                std::size_t dataSize = serializedData.size(); // Get size of the data
 
                 int bytesSent = send(clientSocket, data, dataSize, 0);
                 if (bytesSent == SOCKET_ERROR) {
@@ -377,14 +390,21 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                 }
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+                // Create a string to hold the serialized data
+                std::ostringstream oss;
 
-                std::cout << "Client ID: " << clientId << "Sending position: x = " << ballPosition.x << ", y = " << nextPosition.y << std::endl;
+                // Serialize the data into the string
+                oss << clientId << " " << ballPosition.x << " " << ballPosition.y;
 
-                sf::Packet packet;
-                packet << clientId << ballPosition.x << nextPosition.y;
+                // Convert the stringstream to a string
+                std::string serializedData = oss.str();
 
-                const char* data = static_cast<const char*>(packet.getData());
-                std::size_t dataSize = packet.getDataSize();
+                // Print the serialized data
+                std::cout << "Before sending: " << serializedData << std::endl;
+
+                // Send the serialized data to the server (non-blocking)
+                const char* data = serializedData.c_str(); // Get pointer to the data
+                std::size_t dataSize = serializedData.size(); // Get size of the data
 
                 int bytesSent = send(clientSocket, data, dataSize, 0);
                 if (bytesSent == SOCKET_ERROR) {
@@ -405,14 +425,21 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                 }
 
                 sf::Vector2f ballPosition = ball.getPosition(); // Get updated ball position
+                // Create a string to hold the serialized data
+                std::ostringstream oss;
 
-                std::cout << "Client ID: " << clientId << " Sending position: x = " << nextPosition.x << ", y = " << ballPosition.y << std::endl;
+                // Serialize the data into the string
+                oss << clientId << " " << ballPosition.x << " " << ballPosition.y;
 
-                sf::Packet packet;
-                packet << clientId << nextPosition.x << ballPosition.y;
+                // Convert the stringstream to a string
+                std::string serializedData = oss.str();
 
-                const char* data = static_cast<const char*>(packet.getData());
-                std::size_t dataSize = packet.getDataSize();
+                // Print the serialized data
+                std::cout << "Before sending: " << serializedData << std::endl;
+
+                // Send the serialized data to the server (non-blocking)
+                const char* data = serializedData.c_str(); // Get pointer to the data
+                std::size_t dataSize = serializedData.size(); // Get size of the data
 
                 int bytesSent = send(clientSocket, data, dataSize, 0);
                 if (bytesSent == SOCKET_ERROR) {
@@ -421,7 +448,7 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                     }
                 }
                 else {
-                    std::cout << clientId << "Position data sent to server." << std::endl;
+                    std::cout << "Position data sent to server." << std::endl;
                 }
             }
         }
@@ -493,7 +520,7 @@ int main() {
         return 0;
     }
     else {
-        std::cout << "The Winsock dll found" << std::endl;
+        std::cout << "Client is on" << std::endl << "The Winsock dll found" << std::endl;
         std::cout << "The status: " << wsaData.szSystemStatus << std::endl;
     }
 
@@ -511,7 +538,7 @@ int main() {
     // Connect to server
     sockaddr_in service;
     service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("192.168.1.7"); // Change to server IP address
+    service.sin_addr.s_addr = inet_addr("192.168.68.110"); // Change to server IP address
     service.sin_port = htons(55555); // Change to server port
     if (connect(clientSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
         std::cout << "Failed to connect." << std::endl;
@@ -571,12 +598,21 @@ int main() {
 
     // Create a packet to send ball position
     sf::Vector2f ballPosition = ball.getPosition();
-    sf::Packet packet;
-    packet << id << ballPosition.x << ballPosition.y;
+    // Create a string to hold the serialized data
+    std::ostringstream oss;
 
-    // Send the packet to the server (non-blocking)
-    const char* data = static_cast<const char*>(packet.getData());
-    std::size_t dataSize = packet.getDataSize();
+    // Serialize the data into the string
+    oss << id << " " << ballPosition.x << " " << ballPosition.y;
+
+    // Convert the stringstream to a string
+    std::string serializedData = oss.str();
+
+    // Print the serialized data
+    std::cout << "Before sending: " << serializedData << std::endl;
+
+    // Send the serialized data to the server (non-blocking)
+    const char* data = serializedData.c_str(); // Get pointer to the data
+    std::size_t dataSize = serializedData.size(); // Get size of the data
 
     int bytesSent = send(clientSocket, data, dataSize, 0);
     if (bytesSent == SOCKET_ERROR) {
@@ -587,6 +623,7 @@ int main() {
     else {
         std::cout << "Position data sent to server." << std::endl;
     }
+
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     ThreadPool threadPool(numThreads);

@@ -418,6 +418,24 @@ std::tuple<std::string, sf::Vector2f> receivePackets(SOCKET clientSocket, std::s
     }
 }
 
+std::string receiveSerializedData(SOCKET clientSocket) {
+    // Buffer to store received data
+    char buffer[1024]; // Adjust buffer size as needed
+
+    // Receive data from the client socket
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+    if (bytesReceived <= 0) {
+        // Handle connection error or closed connection
+        return ""; // Return empty string
+    }
+
+    // Convert received data to a string
+    std::string receivedData(buffer, bytesReceived);
+
+    return receivedData;
+}
+
 void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector<Particle>& particles, float speed, float angle) {
     // Serialize and send each particle's position
     for (const auto& particle : particles) {
@@ -496,12 +514,17 @@ void clientHandler(SOCKET clientSocket) {
 
     receiveThread = std::thread([&clientSocket, &receivedData]() {
         while (true) {
-            std::string temp;
             // Receive data from the client socket
-            receivedData = receivePackets(clientSocket, temp);
+            std::string serializedData = receiveSerializedData(clientSocket);
 
-            std::string clientId = std::get<0>(receivedData);
-            sf::Vector2f receivedPosition = std::get<1>(receivedData);
+            // Deserialize the data
+            std::istringstream iss(serializedData);
+            std::string id;
+            sf::Vector2f position;
+            iss >> id >> position.x >> position.y;
+
+            // Print the received data
+            std::cout << "ID: " << id << ", Position: (" << position.x << ", " << position.y << ")" << std::endl;
         }
         });
 
@@ -710,7 +733,7 @@ int main() {
         return 0;
     }
     else {
-        std::cout << "The Winsock dll found" << std::endl;
+        std::cout << "Server is on" << std::endl << "The Winsock dll found" << std::endl;
         std::cout << "The status: " << wsaData.szSystemStatus << std::endl;
     }
 
