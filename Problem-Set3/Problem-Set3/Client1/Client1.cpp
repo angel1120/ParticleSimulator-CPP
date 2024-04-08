@@ -435,7 +435,7 @@ void handleInput(const std::string& clientId, sf::CircleShape& ball, float canva
                 std::string serializedData = oss.str();
 
                 // Print the serialized data
-                std::cout << "Before sending: " << serializedData << std::endl;
+                //std::cout << "Before sending: " << serializedData << std::endl;
 
                 // Send the serialized data to the server (non-blocking)
                 const char* data = serializedData.c_str(); // Get pointer to the data

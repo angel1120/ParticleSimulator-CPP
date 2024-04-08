@@ -261,6 +261,18 @@ void renderParticles(const std::vector<Particle>& particles,
     }
 }
 
+void renderSprite(const sf::Vector2f& receivedPosition,
+    std::mutex& mutex,
+    sf::RenderWindow& window,
+    float scale) {
+    std::cout << receivedPosition.x << " " << receivedPosition.y << std::endl;
+    std::lock_guard<std::mutex> lock(mutex);
+    sf::CircleShape particleShape(5.0f * scale); // Adjust particle size based on scale
+    particleShape.setPosition(receivedPosition);
+    particleShape.setFillColor(sf::Color::Red);
+    window.draw(particleShape);
+}
+
 
 float dot(const sf::Vector2f& v1, const sf::Vector2f& v2) {
     return v1.x * v2.x + v1.y * v2.y;
@@ -411,8 +423,6 @@ std::tuple<std::string, sf::Vector2f> receivePackets(SOCKET clientSocket, std::s
         // Extract ID and position from the packet
         packet >> id >> receivedPosition.x >> receivedPosition.y;
 
-        std::cout << "Received from client: " << id << "Ball position (" << receivedPosition.x << ", " << receivedPosition.y << ")" << std::endl;
-
         // Return the received position
         return std::make_tuple(id, receivedPosition);
     }
@@ -500,7 +510,6 @@ void clientHandler(SOCKET clientSocket) {
     ball.setPosition(640, 360); // Initial position
 
     std::thread receiveThread;
-    std::tuple<std::string, sf::Vector2f> receivedData = std::make_tuple("", sf::Vector2f(-1000, -1000));
     sf::Vector2f receivedPosition = sf::Vector2f(-1000, -1000);
     std::string clientId;
 
@@ -512,7 +521,7 @@ void clientHandler(SOCKET clientSocket) {
     //    }
     //    });
 
-    receiveThread = std::thread([&clientSocket, &receivedData]() {
+    receiveThread = std::thread([&clientSocket, &receivedPosition]() {
         while (true) {
             // Receive data from the client socket
             std::string serializedData = receiveSerializedData(clientSocket);
@@ -521,10 +530,10 @@ void clientHandler(SOCKET clientSocket) {
             std::istringstream iss(serializedData);
             std::string id;
             sf::Vector2f position;
-            iss >> id >> position.x >> position.y;
-
+            iss >> id >> position.x >> position.y;        
+            receivedPosition = position;
             // Print the received data
-            std::cout << "ID: " << id << ", Position: (" << position.x << ", " << position.y << ")" << std::endl;
+            //std::cout << "ID: " << id << ", Position: (" << position.x << ", " << position.y << ")" << std::endl;
         }
         });
 
@@ -610,8 +619,8 @@ void clientHandler(SOCKET clientSocket) {
                         particles.emplace_back(position.x, position.y, speed, angle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, clientId, particles, speed, angle);
                     }
+                    sendParticles(clientSocket, clientId, particles, speed, angle);
                 }
                 ImGui::EndTabItem();
             }
@@ -629,14 +638,15 @@ void clientHandler(SOCKET clientSocket) {
                     if (numParticles > 1) {
                         angleIncrement = (endAngle - startAngle) / (numParticles - 1);
                     }
+                    float currentAngle = 0.0f;
                     for (int i = 0; i < numParticles; ++i) {
-                        float currentAngle = startAngle + i * angleIncrement;
+                        currentAngle = startAngle + i * angleIncrement;
                         sf::Vector2f position = lineStart;
                         particles.emplace_back(position.x, position.y, speed, currentAngle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, clientId, particles, speed, currentAngle);
                     }
+                    sendParticles(clientSocket, clientId, particles, speed, currentAngle);
                 }
                 ImGui::EndTabItem();
             }
@@ -649,14 +659,15 @@ void clientHandler(SOCKET clientSocket) {
                 if (ImGui::Button("Generate Particles")) {
                     particles.clear();
                     float speedIncrement = 450.0f / numParticles;
+                    float currentSpeed = 0.0f;
                     for (int i = 0; i < numParticles; ++i) {
-                        float currentSpeed = 50.0f + i * speedIncrement;
+                        currentSpeed = 50.0f + i * speedIncrement;
                         sf::Vector2f position = lineStart;
                         particles.emplace_back(position.x, position.y, currentSpeed, angle);
 
                         // send the particles to the client
-                        sendParticles(clientSocket, clientId, particles, currentSpeed, angle);
                     }
+                    sendParticles(clientSocket, clientId, particles, currentSpeed, angle);
                 }
                 ImGui::EndTabItem();
             }
@@ -686,7 +697,7 @@ void clientHandler(SOCKET clientSocket) {
         // Render walls and particles
         renderWalls(window, walls, mutex, 1.0f);
         renderParticles(particles, window, mutex, 1.0f);
-
+        renderSprite(receivedPosition, mutex, window, 1.0f);
         // Draw ball
         window.draw(ball);
 
