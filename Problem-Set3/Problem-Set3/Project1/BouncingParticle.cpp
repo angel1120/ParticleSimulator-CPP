@@ -446,8 +446,11 @@ std::string receiveSerializedData(SOCKET clientSocket) {
     return receivedData;
 }
 
-void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector<Particle>& particles, float speed, float angle) {
+void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector<Particle>& particles 
+                    //float speed, float angle
+                    ) {
     // Serialize and send each particle's position
+    std::cout << "Passed here" << std::endl;
     for (const auto& particle : particles) {
         // Serialize and send client ID
         if (send(clientSocket, reinterpret_cast<const char*>(&clientId), sizeof(clientId), 0) == SOCKET_ERROR) {
@@ -462,7 +465,7 @@ void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector
             return;
         }
 
-
+        /*
         // Serialize and send speed
         if (send(clientSocket, reinterpret_cast<const char*>(&speed), sizeof(speed), 0) == SOCKET_ERROR) {
             std::cerr << "Error sending particle speed." << std::endl;
@@ -474,7 +477,7 @@ void sendParticles(SOCKET clientSocket, std::string& clientId, const std::vector
             std::cerr << "Error sending particle angle." << std::endl;
             return;
         }
-
+        */
     }
 }
 
@@ -617,10 +620,7 @@ void clientHandler(SOCKET clientSocket) {
                         }
                         sf::Vector2f position = lineStart + t * (lineEnd - lineStart);
                         particles.emplace_back(position.x, position.y, speed, angle);
-
-                        // send the particles to the client
                     }
-                    sendParticles(clientSocket, clientId, particles, speed, angle);
                 }
                 ImGui::EndTabItem();
             }
@@ -638,15 +638,11 @@ void clientHandler(SOCKET clientSocket) {
                     if (numParticles > 1) {
                         angleIncrement = (endAngle - startAngle) / (numParticles - 1);
                     }
-                    float currentAngle = 0.0f;
                     for (int i = 0; i < numParticles; ++i) {
-                        currentAngle = startAngle + i * angleIncrement;
+                        float currentAngle = startAngle + i * angleIncrement;
                         sf::Vector2f position = lineStart;
                         particles.emplace_back(position.x, position.y, speed, currentAngle);
-
-                        // send the particles to the client
                     }
-                    sendParticles(clientSocket, clientId, particles, speed, currentAngle);
                 }
                 ImGui::EndTabItem();
             }
@@ -659,15 +655,13 @@ void clientHandler(SOCKET clientSocket) {
                 if (ImGui::Button("Generate Particles")) {
                     particles.clear();
                     float speedIncrement = 450.0f / numParticles;
-                    float currentSpeed = 0.0f;
                     for (int i = 0; i < numParticles; ++i) {
-                        currentSpeed = 50.0f + i * speedIncrement;
+                        float currentSpeed = 50.0f + i * speedIncrement;
                         sf::Vector2f position = lineStart;
                         particles.emplace_back(position.x, position.y, currentSpeed, angle);
 
                         // send the particles to the client
                     }
-                    sendParticles(clientSocket, clientId, particles, currentSpeed, angle);
                 }
                 ImGui::EndTabItem();
             }
@@ -699,6 +693,8 @@ void clientHandler(SOCKET clientSocket) {
         renderParticles(particles, window, mutex, 1.0f);
         renderSprite(receivedPosition, mutex, window, 1.0f);
         // Draw ball
+        sendParticles(clientSocket, clientId, particles);
+
         window.draw(ball);
 
         ImGui::SFML::Render(window);

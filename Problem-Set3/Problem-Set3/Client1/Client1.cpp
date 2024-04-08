@@ -95,141 +95,20 @@ private:
 };
 
 class Particle {
-public:
-    Particle(float startX, float startY, float speed, float angle)
-        : position(startX, startY), velocity(speed* std::cos(angle), speed* std::sin(angle)), isCollided(false) {}
+    private:
+        float x;
+        float y;
+        sf::Vector2f position;
 
-    Particle(const Particle& other)
-        : position(other.position), velocity(other.velocity) {}
+    public:
+        Particle(float posX, float posY) : position(posX, posY) {}
 
-    Particle& operator=(const Particle& other) {
-        if (this != &other) {
-            std::lock(mutex, other.mutex);
-            std::lock_guard<std::mutex> self_lock(mutex, std::adopt_lock);
-            std::lock_guard<std::mutex> other_lock(other.mutex, std::adopt_lock);
-            position = other.position;
-            velocity = other.velocity;
+        // Accessor methods for x and y positions
+        float getX() const { return x; }
+        float getY() const { return y; }
+        sf::Vector2f getPosition() const {
+            return position;
         }
-        return *this;
-    }
-
-    void update(float deltaTime, float canvasWidth, float canvasHeight, const std::vector<sf::VertexArray>& walls) {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        sf::Vector2f nextPosition = position + velocity * deltaTime;
-
-        if (nextPosition.x < 0 || nextPosition.x > canvasWidth) {
-            velocity.x = -velocity.x;
-            nextPosition.x = clamp(nextPosition.x, 0.0f, static_cast<float>(canvasWidth));
-        }
-        if (nextPosition.y < 0 || nextPosition.y > canvasHeight) {
-            velocity.y = -velocity.y;
-            nextPosition.y = clamp(nextPosition.y, 0.0f, static_cast<float>(canvasHeight));
-        }
-        if (!isCollided) {
-            for (const auto& wall : walls) {
-                for (size_t i = 0; i < wall.getVertexCount() - 1; ++i) {
-                    sf::Vector2f p1 = wall[i].position;
-                    sf::Vector2f p2 = wall[i + 1].position;
-                    if (intersects(position, nextPosition, p1, p2)) {
-                        isCollided = true;
-
-
-                        sf::Vector2f normal = getNormal(p1, p2);
-
-                        float dotProduct = velocity.x * normal.x + velocity.y * normal.y;
-                        sf::Vector2f reflection = velocity - 2.0f * dotProduct * normal;
-                        nextPosition = getCollisionPoint(position, nextPosition, p1, p2);
-
-                        velocity = reflection;
-                        break;
-                    }
-                }
-            }
-        }
-        else {
-            isCollided = false;
-        }
-        position = nextPosition;
-    }
-
-    sf::Vector2f getPosition() const {
-        return position;
-    }
-    sf::Vector2f getVelocity() const {
-        return velocity;
-    }
-
-    //no longer in use
-    void render(sf::RenderWindow& window) const {
-        std::lock_guard<std::mutex> lock(mutex);
-
-        sf::CircleShape shape(5.0f);
-        shape.setFillColor(sf::Color::Green);
-        shape.setPosition(position);
-        window.draw(shape);
-    }
-
-private:
-    sf::Vector2f position;
-    sf::Vector2f velocity;
-    mutable std::mutex mutex;
-    bool isCollided;
-
-    sf::Vector2f getCollisionPoint(const sf::Vector2f& startPos, const sf::Vector2f& endPos, const sf::Vector2f& wallStart, const sf::Vector2f& wallEnd) {
-        sf::Vector2f collisionPoint;
-
-        float x1 = startPos.x, y1 = startPos.y;
-        float x2 = endPos.x, y2 = endPos.y;
-        float x3 = wallStart.x, y3 = wallStart.y;
-        float x4 = wallEnd.x, y4 = wallEnd.y;
-
-        float denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-        if (denom == 0) {
-            return endPos;
-        }
-
-        float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-        float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
-
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-            collisionPoint.x = x1 + t * (x2 - x1);
-            collisionPoint.y = y1 + t * (y2 - y1);
-        }
-        else {
-            return endPos;
-        }
-
-        return collisionPoint;
-    }
-
-    static bool intersects(const sf::Vector2f& p1, const sf::Vector2f& p2, const sf::Vector2f& q1, const sf::Vector2f& q2) {
-        float s1_x, s1_y, s2_x, s2_y;
-        s1_x = p2.x - p1.x;
-        s1_y = p2.y - p1.y;
-        s2_x = q2.x - q1.x;
-        s2_y = q2.y - q1.y;
-        float s, t;
-        s = (-s1_y * (p1.x - q1.x) + s1_x * (p1.y - q1.y)) / (-s2_x * s1_y + s1_x * s2_y);
-        t = (s2_x * (p1.y - q1.y) - s2_y * (p1.x - q1.x)) / (-s2_x * s1_y + s1_x * s2_y);
-
-        return s >= 0 && s <= 1 && t >= 0 && t <= 1;
-    }
-
-    sf::Vector2f getNormal(const sf::Vector2f& p1, const sf::Vector2f& p2) {
-        sf::Vector2f direction = p2 - p1;
-
-        sf::Vector2f normal(-direction.y, direction.x); // Rotate direction vector 90 degrees
-
-        float length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
-        if (length != 0) {
-            normal.x /= length;
-            normal.y /= length;
-        }
-
-        return normal;
-    }
 };
 
 void renderWalls(sf::RenderWindow& window,
@@ -475,7 +354,7 @@ void receiveDataFromServer(SOCKET clientSocket, const std::string& clientId, std
             std::cerr << "Error receiving particle position." << std::endl;
             break;
         }
-
+        /*
         // Receive particle speed
         if (recv(clientSocket, reinterpret_cast<char*>(&receivedSpeed), sizeof(receivedSpeed), 0) == SOCKET_ERROR) {
             std::cerr << "Error receiving particle speed." << std::endl;
@@ -487,8 +366,8 @@ void receiveDataFromServer(SOCKET clientSocket, const std::string& clientId, std
             std::cerr << "Error receiving particle angle." << std::endl;
             break;
         }
-
-        particles.emplace_back(position.x, position.y, receivedSpeed, receivedAngle);
+        */
+        particles.emplace_back(position.x, position.y);
     }
 }
 
@@ -665,13 +544,8 @@ int main() {
         ImGui::Text("FPS: %.1f", fps);
 
         ImGui::End();
-
-        threadPool.enqueue([&particles, deltaTime, canvasWidth, canvasHeight, &walls]() {
-            for (auto& particle : particles) {
-                particle.update(deltaTime, canvasWidth, canvasHeight, walls);
-            }
-            });
-
+        
+        
         float scale = 5.0f;
         float zoomedInLeft = ball.getPosition().x - 16 * scale;
         float zoomedInRight = ball.getPosition().x + 16 * scale;
@@ -690,6 +564,7 @@ int main() {
         renderParticles(particles, window, mutex, 1.0f);
 
         window.draw(ball);
+        particles.clear();
 
         ImGui::SFML::Render(window);
 
