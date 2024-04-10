@@ -33,8 +33,9 @@
 
 bool devWindowCreated = false;
 sf::RenderWindow window;
-
-//std::atomic<sf::Vector2f> receivedBallPosition;
+// Global variables
+std::mutex clientSocketsMutex;
+std::vector<SOCKET> clientSockets;
 
 template<typename T>
 const T& clamp(const T& value, const T& min, const T& max) {
@@ -261,16 +262,19 @@ void renderParticles(const std::vector<Particle>& particles,
     }
 }
 
-void renderSprite(const sf::Vector2f& receivedPosition,
+void renderSprite(const std::vector<sf::Vector2f>& receivedPositions,
     std::mutex& mutex,
     sf::RenderWindow& window,
     float scale) {
-    std::cout << receivedPosition.x << " " << receivedPosition.y << std::endl;
     std::lock_guard<std::mutex> lock(mutex);
+
     sf::CircleShape particleShape(5.0f * scale); // Adjust particle size based on scale
-    particleShape.setPosition(receivedPosition);
     particleShape.setFillColor(sf::Color::Red);
-    window.draw(particleShape);
+
+    for (const auto& position : receivedPositions) {
+        particleShape.setPosition(position);
+        window.draw(particleShape);
+    }
 }
 
 
@@ -446,29 +450,43 @@ std::string receiveSerializedData(SOCKET clientSocket) {
     return receivedData;
 }
 
-void sendParticles(SOCKET clientSocket, const std::string& clientId, const std::vector<Particle>& particles) {
-    // Send client ID
-    if (send(clientSocket, clientId.c_str(), clientId.size() + 1, 0) == SOCKET_ERROR) {
-        std::cerr << "Error sending client ID." << std::endl;
-        return;
-    }
+void sendSerializedData(SOCKET clientSocket, const std::string& serializedData) {
+    // Convert serialized data to a char array
+    const char* dataBuffer = serializedData.c_str();
+    int dataSize = serializedData.size();
 
-    // Serialize particle positions
-    std::vector<sf::Vector2f> positions;
-    positions.reserve(particles.size());
-    for (const auto& particle : particles) {
-        positions.push_back(particle.getPosition());
-    }
+    // Send the data to the client socket
+    int bytesSent = send(clientSocket, dataBuffer, dataSize, 0);
 
-    // Send particle positions
-    if (send(clientSocket, reinterpret_cast<const char*>(positions.data()), sizeof(sf::Vector2f) * positions.size(), 0) == SOCKET_ERROR) {
-        std::cerr << "Error sending particle positions." << std::endl;
-        return;
+    // Check for errors
+    if (bytesSent == SOCKET_ERROR) {
+        std::cerr << "Error sending serialized data." << std::endl;
     }
 }
 
+void sendParticles(SOCKET clientSocket, const std::vector<Particle>& particles, const sf::Vector2f& receivedPosition) {
+    // Serialize particle positions and received position
+    std::ostringstream oss;
+    oss << receivedPosition.x << " " << receivedPosition.y;
 
-void clientHandler(SOCKET clientSocket) {
+    for (const auto& particle : particles) {
+        oss << " " << particle.getPosition().x << " " << particle.getPosition().y;
+    }
+
+    std::string serializedData = oss.str();
+
+    // Send serialized data to the client
+    sendSerializedData(clientSocket, serializedData);
+}
+
+void updateBallPositions(const std::vector<sf::Vector2f>& receivedPositions, std::vector<sf::CircleShape>& balls) {
+    // Iterate over each received position and update the corresponding ball position
+    for (size_t i = 0; i < receivedPositions.size(); ++i) {
+        balls[i].setPosition(receivedPositions[i]);
+    }
+}
+
+void clientHandler(const std::vector<SOCKET>& clientSockets) {
     char buffer[200];
     int byteCount;
 
@@ -494,38 +512,48 @@ void clientHandler(SOCKET clientSocket) {
     sf::Vector2f lineStart(100.0f, 360.0f); // Default line start point
     sf::Vector2f lineEnd(1180.0f, 360.0f);  // Default line end point
 
-    sf::CircleShape ball(RADIUS);
+    std::vector<sf::CircleShape> balls;
     bool developerMode = true; // Default to developer mode
-    ball.setFillColor(sf::Color::Red);
-    ball.setPosition(640, 360); // Initial position
 
-    std::thread receiveThread;
-    sf::Vector2f receivedPosition = sf::Vector2f(-1000, -1000);
-    std::string clientId;
 
-    //std::cout << "Client ID: " << clientId << std::endl;
+    std::vector<std::thread> receiveThreads;
+    std::vector<sf::Vector2f> receivedPositions(clientSockets.size(), sf::Vector2f(-1000, -1000)); // Initialize received positions
+    std::vector<std::string> clientIDs;
 
-    //receiveThread = std::thread([&clientSocket, &receivedPosition]() {
-    //    while (true) {
-    //        receivedPosition = receivePackets(clientSocket);
-    //    }
-    //    });
 
-    receiveThread = std::thread([&clientSocket, &receivedPosition]() {
-        while (true) {
-            // Receive data from the client socket
-            std::string serializedData = receiveSerializedData(clientSocket);
+    // Start a receive thread for each client socket
+    for (size_t i = 0; i < clientSockets.size(); ++i) {
+        // Create a new ball object for this client
+        sf::CircleShape ball(RADIUS);
+        ball.setFillColor(sf::Color::Red);
+        ball.setPosition(640, 360); // Initial position
+        balls.push_back(ball);
 
-            // Deserialize the data
-            std::istringstream iss(serializedData);
-            std::string id;
-            sf::Vector2f position;
-            iss >> id >> position.x >> position.y;        
-            receivedPosition = position;
-            // Print the received data
-            //std::cout << "ID: " << id << ", Position: (" << position.x << ", " << position.y << ")" << std::endl;
-        }
-        });
+        receiveThreads.emplace_back([&clientSockets, &receivedPositions, &balls, &clientIDs, i]() {
+            while (true) {
+                // Receive data from the client socket
+                std::string serializedData = receiveSerializedData(clientSockets[i]);
+
+                // Deserialize the data
+                std::istringstream iss(serializedData);
+                std::string id;
+                sf::Vector2f position;
+                iss >> id >> position.x >> position.y;
+
+                // Update the received position for this client
+                receivedPositions[i] = position;
+
+                // Update the position of the corresponding ball
+                balls[i].setPosition(position);
+
+                // Store the client ID
+                clientIDs.emplace_back(id);
+
+                // Print the received data if needed
+                // std::cout << "ID: " << id << ", Position: (" << position.x << ", " << position.y << ")" << std::endl;
+            }
+            });
+    }
 
     unsigned int numThreads = std::thread::hardware_concurrency();
     ThreadPool threadPool(numThreads);
@@ -563,7 +591,7 @@ void clientHandler(SOCKET clientSocket) {
 
         window.clear(sf::Color::Black);
 
-        ball.setPosition(receivedPosition);
+        updateBallPositions(receivedPositions, balls);
 
         window.setView(window.getDefaultView());
 
@@ -678,11 +706,21 @@ void clientHandler(SOCKET clientSocket) {
         // Render walls and particles
         renderWalls(window, walls, mutex, 1.0f);
         renderParticles(particles, window, mutex, 1.0f);
-        renderSprite(receivedPosition, mutex, window, 1.0f);
-        // Draw ball
-        sendParticles(clientSocket, clientId, particles);
+        renderSprite(receivedPositions, mutex, window, 1.0f);
 
-        window.draw(ball);
+        // Draw ball
+        int i = 0;
+        size_t j = 1;
+        for (auto& clientSocket : clientSockets) {
+            if (i == 1) {
+                j = 0;
+            }
+            std::cout << "Neighbor: " << receivedPositions[j].x << " " << receivedPositions[j].y << std::endl;
+            sendParticles(clientSocket, particles, receivedPositions[j]);
+            i++;
+        }
+
+        //window.draw(balls);
 
         ImGui::SFML::Render(window);
 
@@ -691,6 +729,9 @@ void clientHandler(SOCKET clientSocket) {
         frameCount++;
     }
     ImGui::SFML::Shutdown();
+    for (auto& thread : receiveThreads) {
+        thread.join();
+    }
 }
 
 void initializeWindow() {
@@ -701,22 +742,37 @@ void initializeWindow() {
     ImGui::SFML::Init(window);
 }
 
-void createWindow(SOCKET clientsocket) {
+void createWindow(const std::vector<SOCKET>& clientSockets) {
     // Create Dev Window
-
     if (!devWindowCreated) {
         initializeWindow();
         devWindowCreated = true;
     }
-    clientHandler(clientsocket);
+
+    // Pass the list of client sockets to clientHandler
+    clientHandler(clientSockets);
 }
 
 
-int main() {
-    // Create a container to store client IDs and positions
-    std::unordered_map<std::string, sf::Vector2f> clientPositions;
 
-    // server
+// Function to handle client connections
+void acceptClients(SOCKET serverSocket) {
+    while (true) {
+        SOCKET clientSocket = accept(serverSocket, NULL, NULL);
+        if (clientSocket == INVALID_SOCKET) {
+            std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+        }
+        else {
+            std::cout << "Client connected" << std::endl;
+
+            // Lock the mutex before modifying shared resources
+            std::lock_guard<std::mutex> lock(clientSocketsMutex);
+            clientSockets.push_back(clientSocket);
+        }
+    }
+}
+
+int main() {
     // Initialize WSA variables
     WSADATA wsaData;
     int wsaerr;
@@ -763,27 +819,20 @@ int main() {
     }
     else {
         std::cout << "listen() is online, waiting for new connections..." << std::endl;
-    
     }
 
-    // Accept incoming connections and handle clients concurrently
-    while (true) {
-        SOCKET clientSocket = accept(serverSocket, NULL, NULL);
-        if (clientSocket == INVALID_SOCKET) {
-            std::cout << "accept failed: " << WSAGetLastError() << std::endl;
-            closesocket(serverSocket);
-            WSACleanup();
-            return -1;
-        }
-        else {
-            std::cout << "accept() is on" << std::endl;
-        }
+    // Start a thread to accept incoming client connections
+    std::thread(acceptClients, serverSocket).detach();
 
-        std::thread(createWindow, clientSocket).detach();
-    }
+    // Create the window after server initialization
+    createWindow(clientSockets);
 
-        closesocket(serverSocket);
-        WSACleanup();
-        return 0;
-    
+    // Wait for user input to exit
+    std::cout << "Press Enter to exit..." << std::endl;
+    std::cin.get();
+
+    // Cleanup and exit
+    closesocket(serverSocket);
+    WSACleanup();
+    return 0;
 }
