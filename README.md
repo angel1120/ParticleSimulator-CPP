@@ -61,8 +61,7 @@ _Click the setting icon as indicated in the image_
 _Check the Include and Library directories and change them according to your machine's specifications_
 
 4. **Configure C++**
-
-<img src="images/5.png" alt="Configure C++" width="600">
+   v<img src="images/5.png" alt="Configure C++" width="600">
 
 5. **Configure Linker/General**
 
@@ -72,12 +71,25 @@ _Check the Include and Library directories and change them according to your mac
 
 <img src="images/7.png" alt="Configure Linker/Input" width="600">
 
-7. **Copy the required DLL files**
+7. **Repeat step 1-6 in other solution folders**
+   <img src="images/7.5.png" alt="Repeat Steps" width="600">
+
+8. **Copy the required DLL files**
 
 <img src="images/8.png" alt="Copy the required DLL files" width="600">
-_You need `sfml-graphics-2.dll`, `sfml-system-2.dll`, and `sfml-window-2.dll` pasted in the directory where the executable file is located_
+_You need `sfml-graphics-2.dll`, `sfml-system-2.dll`, `sfml-network-2.dll`, and `sfml-window-2.dll` pasted in the directory where the executable file is located_
 
-8. **Paste the files to the application folder**
+9. **Paste the files to the application folder**
 
 <img src="images/9.png" alt="Paste the files to the application folder" width="600">
-_After pasting the files, IDE can compile and run the particle simulator application_
+_Copy paste the above dll files to following directories
+
+    ```bash
+    C:\your_address\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\x64\Debug
+
+    C:\your_address\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client1\x64\Debug
+
+    C:\your_address\ParticleSimulator-CPP\Problem-Set3\Problem-Set3\Client2\x64\Debug
+    ```
+
+Now the IDE can compile and run the particle simulator application\_
